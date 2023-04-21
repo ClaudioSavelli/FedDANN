@@ -17,10 +17,10 @@ from constants import DATASETS
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--name',
-                help='name of dataset to parse; default: sent140;',
+                help='name of dataset to parse; default: femnist;',
                 type=str,
                 choices=DATASETS,
-                default='sent140')
+                default='femnist')
 
 args = parser.parse_args()
 
@@ -29,6 +29,7 @@ def load_data(name):
 
     users = []
     num_samples = []
+    num_classes = []
 
     parent_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     data_dir = os.path.join(parent_path, name, 'data')
@@ -46,10 +47,27 @@ def load_data(name):
         users.extend(data['users'])
         num_samples.extend(data['num_samples'])
 
-    return users, num_samples
+        for user in data['users']: 
+            num_classes.append(len(set(data['user_data'][user]['y'])))
+        
+
+
+    return users, num_samples, num_classes
+
+
+def our_stats(name):
+    users, num_samples, num_classes = load_data(name)
+    num_users = len(users)
+    
+    #print(list(zip(users, num_classes)))
+    print("mean obtained: ", np.mean(num_classes))
+    print("std obtained: ",np.std(num_classes))
+
+
+
 
 def print_dataset_stats(name):
-    users, num_samples = load_data(name)
+    users, num_samples, _ = load_data(name)
     num_users = len(users)
 
     print('####################################')
@@ -89,4 +107,6 @@ def print_dataset_stats(name):
     fig_dir = os.path.join(data_dir, fig_name)
     plt.savefig(fig_dir)
 
-print_dataset_stats(args.name)
+#print_dataset_stats(args.name)
+our_stats(args.name)
+
