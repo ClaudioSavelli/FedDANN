@@ -48,8 +48,7 @@ def model_init(args):
         model.fc = nn.Linear(in_features=512, out_features=get_dataset_num_classes(args.dataset))
         return model
     if args.model == 'cnn':
-        # TODO: missing code here!
-        raise NotImplementedError
+        return My_CNN(imageDim, get_dataset_num_classes(args.dataset))
     raise NotImplementedError
 
 
@@ -182,7 +181,6 @@ def main():
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model)
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train()
-
 
 if __name__ == '__main__':
     main()

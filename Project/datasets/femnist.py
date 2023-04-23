@@ -6,10 +6,10 @@ from torch.utils.data import Dataset
 
 IMAGE_SIZE = 28
 
-# transform = transforms.Compose([
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-# ])
+transform = transforms.Compose([
+     transforms.ToTensor(),
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+ ])
 
 
 class Femnist(Dataset):
