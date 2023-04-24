@@ -26,9 +26,19 @@ wandb.init(
     "dataset": "EMNIST",
     "epochs": 20,
     "Optimiser": "SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)",
-    "criterion": "nn.CrossEntropyLoss()"
+    "criterion": "nn.CrossEntropyLoss()",
+    "p": 0.5,
+    "lr modifier": "Multiplied by 0.1 every 578 iterations",
+    "seed": 1304
     }
 )
+
+imageDim = 28*28
+
+#Hyperparameters
+lrng_rate = 0.01
+training_epochs = 20
+p = 0.5
 
 # Create Fully Connected Network
 class My_CNN(nn.Module): 
@@ -55,13 +65,15 @@ class My_CNN(nn.Module):
         # Second fully connected layer that outputs our 10 labels
         self.fc2 = nn.Linear(2048, num_classes)
 
+        self.dropout = nn.Dropout(p)
+
     def forward(self, x): 
-        out = self.layer1(x)
-        out = self.layer2(out)
+        out = self.dropout(self.layer1(x))
+        out = self.dropout(self.layer2(out))
         out = out.reshape(out.shape[0],-1)
         #print('x_shape:',out.shape)
-        out = self.fc1(out)
-        out = self.fc2(out)
+        out = self.dropout(self.fc1(out))
+        out = self.fc2(out) #to ask 
         return out
 
 def check_accuracy(loader, model):
@@ -83,17 +95,11 @@ def check_accuracy(loader, model):
         print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples)*100:.2f}')
         return round((float(num_correct) / float(num_samples))*100, 2) 
 
-imageDim = 28*28
-
-#Hyperparameters
-lrng_rate = 0.01
-training_epochs = 20
-
 #Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-torch.manual_seed(42)
+torch.manual_seed(1304)
 
 train_loader, valid_loader = get_train_valid_loader(data_dir = './data', batch_size = 64, augment = False, random_seed = 1)
 
@@ -107,15 +113,23 @@ optimizer = optim.SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)
 #optimizer = optim.Adam(params=model.parameters(), lr=lrng_rate)
 
 #Train network
-#print('Training the Deep Learning network ...')
+print('Training the Deep Learning network ...')
 #total_batch = len(mnist_train) // batch_size
 #print('Size of the training dataset is {}'.format(mnist_train.data.size()))
 #print('Size of the testing dataset'.format(mnist_test.data.size()))
 #print('Batch size is : {}'.format(batch_size))
 #print('Total number of batches is : {0:2.0f}'.format(total_batch))
 #print('\nTotal number of epochs is : {0:2.0f}'.format(training_epochs))
-
+counter_epoch = 0
 for epoch in range(training_epochs):
+    counter_epoch += 1
+    print("Epoch n. ", counter_epoch)
+    if (counter_epoch % 5) == 0:
+        for g in optimizer.param_groups:
+            print("Changing the learning rate from ", g['lr'])
+            g['lr'] = g['lr'] * 0.1
+            print("to ", g['lr'])
+
     for i, (data, targets) in enumerate(train_loader):
         #loading bar 
         n = len(train_loader)
