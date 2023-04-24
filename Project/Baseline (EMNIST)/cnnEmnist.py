@@ -11,6 +11,25 @@ from math import sqrt
 
 from utils import *
 
+import wandb
+import random
+
+# start a new wandb run to track this script
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="EmnistBenchmark",
+    
+    # track hyperparameters and run metadata
+    config={
+    "learning_rate": 0.01,
+    "architecture": "CNN",
+    "dataset": "EMNIST",
+    "epochs": 20,
+    "Optimiser": "SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)",
+    "criterion": "nn.CrossEntropyLoss()"
+    }
+)
+
 # Create Fully Connected Network
 class My_CNN(nn.Module): 
     def __init__(self, input_size, num_classes): 
@@ -62,12 +81,13 @@ def check_accuracy(loader, model):
             num_samples += predictions.size(0)
 
         print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples)*100:.2f}')
+        return round((float(num_correct) / float(num_samples))*100, 2) 
 
 imageDim = 28*28
 
 #Hyperparameters
 lrng_rate = 0.01
-training_epochs = 3
+training_epochs = 20
 
 #Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -96,7 +116,6 @@ optimizer = optim.SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)
 #print('\nTotal number of epochs is : {0:2.0f}'.format(training_epochs))
 
 for epoch in range(training_epochs):
-    avg_cost = 0
     for i, (data, targets) in enumerate(train_loader):
         #loading bar 
         n = len(train_loader)
@@ -123,10 +142,15 @@ for epoch in range(training_epochs):
         optimizer.step()
         
     # Validation
-    check_accuracy(train_loader, model)
-    check_accuracy(valid_loader, model)
+    #acc_tl = check_accuracy(train_loader, model)
+    #acc_vl = check_accuracy(valid_loader, model)
+    print("\n")
+    wandb.log({"acc_train": check_accuracy(train_loader, model), "acc_valid": check_accuracy(valid_loader, model), "loss": loss.item()})
+    wandb.log({"acc_test": check_accuracy(test_loader, model)})
 
 print('Learning Finished!')
+wandb.finish()
+
 
     
 

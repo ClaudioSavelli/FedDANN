@@ -64,9 +64,15 @@ def get_test_loader(data_dir,
                     batch_size,
                     shuffle=True):
 
+    normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+    )
+
     # define transform
     transform = transforms.Compose([
-        transforms.ToTensor()
+        transforms.ToTensor(), 
+        normalize
     ])
 
     dataset = datasets.EMNIST(
