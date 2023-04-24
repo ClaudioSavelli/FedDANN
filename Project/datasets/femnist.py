@@ -24,8 +24,9 @@ class Femnist(Dataset):
         self.client_name = client_name
 
     def __getitem__(self, index: int) -> Any:
-        # TODO: missing code here!
-        raise NotImplementedError
+        img, label = self.samples[index]
+        img = self.transform(img)
+        return img, label
 
     def __len__(self) -> int:
         return len(self.samples)

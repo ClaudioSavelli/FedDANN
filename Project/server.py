@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 import torch
+import sys
 
 
 class Server:
@@ -27,8 +28,15 @@ class Server:
         """
         updates = []
         for i, c in enumerate(clients):
-            # TODO: missing code here!
-            raise NotImplementedError
+            # loading bar
+            n = len(clients)
+            sys.stdout.write('\r')
+            j = (i + 1) / n
+            sys.stdout.write("Round %d: [%-20s] %d%%" % (i, '=' * int(20 * j), 100 * j))
+            sys.stdout.flush()
+
+            n_samples, model_parameters = c.train()
+            updates.append( (n_samples, model_parameters) )
         return updates
 
     def aggregate(self, updates):
@@ -44,9 +52,21 @@ class Server:
         """
         This method orchestrates the training the evals and tests at rounds level
         """
+
         for r in range(self.args.num_rounds):
-            # TODO: missing code here!
-            raise NotImplementedError
+
+            # Chose clients
+            client_index = self.select_clients()
+            clients = [self.train_clients[i] for i in client_index]
+
+            updates = self.train_round(clients)
+            new_parameters = self.aggregate(updates)
+
+            ######## !!! MA IL TEST/VALIDATION ?
+
+            # Update parameters
+            for c in self.train_clients:
+                c.change_model(self.model)
 
     def eval_train(self):
         """

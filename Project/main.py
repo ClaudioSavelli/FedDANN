@@ -48,7 +48,8 @@ def model_init(args):
         model.fc = nn.Linear(in_features=512, out_features=get_dataset_num_classes(args.dataset))
         return model
     if args.model == 'cnn':
-        return My_CNN(imageDim, get_dataset_num_classes(args.dataset))
+        raise NotImplementedError
+        #return My_CNN(imageDim, get_dataset_num_classes(args.dataset))
     raise NotImplementedError
 
 
@@ -68,6 +69,7 @@ def get_transforms(args):
         train_transforms = nptr.Compose([
             nptr.ToTensor(),
             nptr.Normalize((0.5,), (0.5,)),
+            nptr.reshape(28,28) # ???
         ])
         test_transforms = nptr.Compose([
             nptr.ToTensor(),
@@ -155,11 +157,11 @@ def set_metrics(args):
     return metrics
 
 
-def gen_clients(args, train_datasets, test_datasets, model):
+def gen_clients(args, train_datasets, test_datasets, model, device):
     clients = [[], []]
     for i, datasets in enumerate([train_datasets, test_datasets]):
         for ds in datasets:
-            clients[i].append(Client(args, ds, model, test_client=i == 1))
+            clients[i].append(Client(args, ds, model, test_client=i == 1, device=device))
     return clients[0], clients[1]
 
 
@@ -168,9 +170,11 @@ def main():
     args = parser.parse_args()
     set_seed(args.seed)
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
     print(f'Initializing model...')
     model = model_init(args)
-    model.cuda()
+    model.to("cuda")
     print('Done.')
 
     print('Generate datasets...')
@@ -178,7 +182,8 @@ def main():
     print('Done.')
 
     metrics = set_metrics(args)
-    train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model)
+    train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
+
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train()
 
