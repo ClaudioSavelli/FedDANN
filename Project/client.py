@@ -4,22 +4,25 @@ import torch
 from torch import optim, nn
 from collections import defaultdict
 from torch.utils.data import DataLoader
+import sys
 
 from utils.utils import HardNegativeMining, MeanReduction
 
 
 class Client:
 
-    def __init__(self, args, dataset, model, test_client=False):
+    def __init__(self, args, dataset, model, test_client=False, device=None):
         self.args = args
         self.dataset = dataset
         self.name = self.dataset.client_name
         self.model = model
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
-        self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False) # P
         self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='none')
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
+
+        self.device = device
 
     def __str__(self):
         return self.name
@@ -45,8 +48,22 @@ class Client:
         :param optimizer: optimizer used for the local training
         """
         for cur_step, (images, labels) in enumerate(self.train_loader):
-            # TODO: missing code here!
-            raise NotImplementedError
+            # Get data to cuda if possible
+            images = images.to(self.device)
+            labels = labels.to(self.device)
+
+            # forward
+            outputs = self.model(images)
+
+            loss = self.criterion(outputs, labels)
+
+            # backward
+            optimizer.zero_grad()
+            loss.backward()
+
+            # gradient descent or adam step
+            optimizer.step()
+
 
     def train(self):
         """
@@ -54,19 +71,25 @@ class Client:
         (by calling the run_epoch method for each local epoch of training)
         :return: length of the local dataset, copy of the model parameters
         """
-        # TODO: missing code here!
-        for epoch in range(self.args.num_epochs):
-            # TODO: missing code here!
-            raise NotImplementedError
 
+        optmz = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=0.9)
+        for epoch in range(self.args.num_epochs):
+            self.run_epoch(epoch, optimizer=optmz)
+
+        return len(self.train_loader.dataset), self.model.parameters
     def test(self, metric):
         """
         This method tests the model on the local dataset of the client.
         :param metric: StreamMetric object
         """
-        # TODO: missing code here!
+
         with torch.no_grad():
-            for i, (images, labels) in enumerate(self.test_loader):
-                # TODO: missing code here!
-                raise NotImplementedError
+            for i, (img, labels) in enumerate(self.test_loader):
+                img = img.to(device=self.device)
+                labels = labels.to(device=self.device)
+                outputs = self._get_outputs(img)
+
                 self.update_metric(metric, outputs, labels)
+
+    def change_model(self, model):
+        self.model = model #deepcopy ?
