@@ -166,9 +166,36 @@ def gen_clients(args, train_datasets, test_datasets, model, device):
 
 
 def main():
+        # start a new wandb run to track this script
     parser = get_parser()
     args = parser.parse_args()
     set_seed(args.seed)
+    '''
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="Femnist part 1",
+        
+        # track hyperparameters and run metadata
+        
+        config={
+        "learning_rate": args['--lr'],
+        "batch size": args['--bs'],
+        "weight decay": args['--wd'],
+        "momentum": args['--momentum'],
+        "seed": args['--seed'],
+        "isNiid": args['--niid'],
+        "model": args['--model'],
+        "num_rounds": args['--num_rounds'],
+        "num_local_epochs": args['--num_epochs'],
+        "clients_per_round": args['--clients_per_round'],
+        "architecture": "CNN",
+        "dataset": "FeMnist",
+        "Optimiser": "SGD",
+        "criterion": "CrossEntropyLoss",
+        "p": 0.5,
+        "lr modifier": "Multiplied by 0.1 every 5 iterations",
+        }
+    )'''
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -186,6 +213,8 @@ def main():
 
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train()
+
+    wandb.finish()
 
 if __name__ == '__main__':
     main()
