@@ -11,6 +11,8 @@ from torchvision.models import resnet18
 import datasets.ss_transforms as sstr
 import datasets.np_transforms as nptr
 
+import torchvision.transforms as transforms
+
 from torch import nn
 from client import Client
 from datasets.femnist import Femnist
@@ -18,6 +20,7 @@ from server import Server
 from utils.args import get_parser
 from datasets.idda import IDDADataset
 from models.deeplabv3 import deeplabv3_mobilenetv2
+from models.cnn1 import My_CNN
 from utils.stream_metrics import StreamSegMetrics, StreamClsMetrics
 
 
@@ -48,8 +51,7 @@ def model_init(args):
         model.fc = nn.Linear(in_features=512, out_features=get_dataset_num_classes(args.dataset))
         return model
     if args.model == 'cnn':
-        raise NotImplementedError
-        #return My_CNN(imageDim, get_dataset_num_classes(args.dataset))
+        return My_CNN(28*28,62)
     raise NotImplementedError
 
 
@@ -66,14 +68,21 @@ def get_transforms(args):
             sstr.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
     elif args.model == 'cnn' or args.model == 'resnet18':
+        normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+        )
         train_transforms = nptr.Compose([
-            nptr.ToTensor(),
-            nptr.Normalize((0.5,), (0.5,)),
-            nptr.reshape(28,28) # ???
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            normalize,
+            #nptr.Normalize((0.5,), (0.5,))
         ])
         test_transforms = nptr.Compose([
-            nptr.ToTensor(),
-            nptr.Normalize((0.5,), (0.5,)),
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            normalize,
+            #nptr.Normalize((0.5,), (0.5,))
         ])
     else:
         raise NotImplementedError
@@ -198,6 +207,7 @@ def main():
     )'''
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    torch.manual_seed(args.seed)
 
     print(f'Initializing model...')
     model = model_init(args)

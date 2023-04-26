@@ -74,9 +74,11 @@ class Server:
         for r in range(self.args.num_rounds):
 
             # Choose clients
-            client_index = self.select_clients()
-            clients = [self.train_clients[i] for i in client_index]
+            # client_index = self.select_clients()
+            # clients = [self.train_clients[i] for i in client_index]
 
+            clients = self.select_clients()
+            
             updates = self.train_round(clients)
             new_parameters = self.aggregate(updates)
 

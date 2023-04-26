@@ -72,7 +72,7 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
 
-        optmz = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=0.9)
+        optmz = optim.SGD(params=self.model.parameters(), lr=self.args.lr, momentum=0.9)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
