@@ -28,8 +28,8 @@ wandb.init(
     "Optimiser": "SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)",
     "criterion": "nn.CrossEntropyLoss()",
     "p": 0.5,
-    "lr modifier": "Multiplied by 0.1 every 578 iterations",
-    "seed": 1304
+    "lr modifier": "Multiplied by 0.1 every 5 iterations",
+    "seed": 42
     }
 )
 
@@ -99,7 +99,7 @@ def check_accuracy(loader, model):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-torch.manual_seed(1304)
+torch.manual_seed(42)
 
 train_loader, valid_loader = get_train_valid_loader(data_dir = './data', batch_size = 64, augment = False, random_seed = 1)
 
