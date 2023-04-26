@@ -76,7 +76,8 @@ class Client:
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
-        return len(self.train_loader.dataset), self.model.parameters
+        ## model.parameters returns
+        return len(self.train_loader.dataset), self.model.state_dict()
     def test(self, metric):
         """
         This method tests the model on the local dataset of the client.
@@ -92,4 +93,4 @@ class Client:
                 self.update_metric(metric, outputs, labels)
 
     def change_model(self, model):
-        self.model = model #deepcopy ?
+        self.model = model #deepcopy?

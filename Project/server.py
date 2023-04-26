@@ -45,8 +45,26 @@ class Server:
         :param updates: updates received from the clients
         :return: aggregated parameters
         """
-        # TODO: missing code here!
-        raise NotImplementedError
+
+        ### INITIALIZE NEW (ZERO) STATE DICTIONARY
+        model_sd = self.model.state_dict()
+        new_sd = {}
+        total_count = 0
+        for key in model_sd:
+            new_sd[key] = 0*model_sd[key]
+
+        ### AVERAGE THE OTHER STATE DICTIONARIES
+        for num, state_dict in updates:
+            total_count += num
+            for key in model_sd:
+                new_sd[key] += num * state_dict[key]
+
+        for key in new_sd:
+            new_sd[key] = new_sd[key]/total_count
+
+        return new_sd
+
+
 
     def train(self):
         """
@@ -55,29 +73,46 @@ class Server:
 
         for r in range(self.args.num_rounds):
 
-            # Chose clients
+            # Choose clients
             client_index = self.select_clients()
             clients = [self.train_clients[i] for i in client_index]
 
             updates = self.train_round(clients)
             new_parameters = self.aggregate(updates)
 
-            ######## !!! MA IL TEST/VALIDATION ?
+            self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
 
             # Update parameters
             for c in self.train_clients:
                 c.change_model(self.model)
 
+            if r+1 % self.args.eval_interval:
+                self.eval_train()
+
+            if r+1 % self.args.test_interval:
+                self.eval_train()
     def eval_train(self):
         """
         This method handles the evaluation on the train clients
         """
-        # TODO: missing code here!
-        raise NotImplementedError
+
+        self.metrics['eval_train'].reset()
+
+        for c in self.train_clients:
+            c.test(self.metrics['eval_train'])
+
+        self.metrics['eval_train'].get_results()
+        print(self.metrics['eval_train'])
+
 
     def test(self):
         """
             This method handles the test on the test clients
         """
-        # TODO: missing code here!
-        raise NotImplementedError
+        self.metrics['test'].reset()
+
+        for c in self.test_clients:
+            c.test(self.metrics['test'])
+
+        self.metrics['test'].get_results()
+        print(self.metrics['test'])
