@@ -20,7 +20,7 @@ class Server:
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
         return np.random.choice(self.train_clients, num_clients, replace=False)
 
-    def train_round(self, clients):
+    def train_round(self, clients, n_round):
         """
             This method trains the model with the dataset of the clients. It handles the training at single round level
             :param clients: list of all the clients to train
@@ -32,7 +32,7 @@ class Server:
             n = len(clients)
             sys.stdout.write('\r')
             j = (i + 1) / n
-            sys.stdout.write("Round %d: [%-20s] %d%%" % (i, '=' * int(20 * j), 100 * j))
+            sys.stdout.write("Round %d: [%-20s] %d%%" % (n_round+1, '=' * int(20 * j), 100 * j))
             sys.stdout.flush()
 
             n_samples, model_parameters = c.train()
@@ -79,8 +79,9 @@ class Server:
 
             clients = self.select_clients()
             
-            updates = self.train_round(clients)
+            updates = self.train_round(clients, r)
             new_parameters = self.aggregate(updates)
+            sys.stdout.write("\n")
 
             self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
 
@@ -88,11 +89,12 @@ class Server:
             for c in self.train_clients:
                 c.change_model(self.model)
 
-            if r+1 % self.args.eval_interval:
+            if (r+1) % self.args.eval_interval == 0:
                 self.eval_train()
 
-            if r+1 % self.args.test_interval:
-                self.eval_train()
+            if (r+1) % self.args.test_interval == 0:
+                self.test()
+
     def eval_train(self):
         """
         This method handles the evaluation on the train clients

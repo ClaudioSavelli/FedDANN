@@ -19,7 +19,7 @@ class Client:
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False) # P
-        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='none')
+        self.criterion = nn.CrossEntropyLoss(ignore_index=255) # Da chiedere perchè abbiamo eliminato reduction='none'
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
         self.device = device
@@ -37,7 +37,9 @@ class Client:
     def _get_outputs(self, images):
         if self.args.model == 'deeplabv3_mobilenetv2':
             return self.model(images)['out']
-        if self.args.model == 'resnet18':
+        elif self.args.model == 'resnet18':
+            return self.model(images)
+        elif self.args.model == 'cnn': 
             return self.model(images)
         raise NotImplementedError
 
