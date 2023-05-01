@@ -1,6 +1,8 @@
 import copy
 from collections import OrderedDict
 
+import wandb
+
 import numpy as np
 import torch
 import sys
@@ -106,6 +108,7 @@ class Server:
             c.test(self.metrics['eval_train'])
 
         self.metrics['eval_train'].get_results()
+        wandb.log({"metrics train": self.metrics['eval_train']})
         print(self.metrics['eval_train'])
 
 
@@ -119,4 +122,5 @@ class Server:
             c.test(self.metrics['test'])
 
         self.metrics['test'].get_results()
+        wandb.log({"metrics test": self.metrics['test']})
         print(self.metrics['test'])

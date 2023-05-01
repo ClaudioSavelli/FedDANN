@@ -14,6 +14,7 @@ from utils import *
 import wandb
 import random
 
+
 # start a new wandb run to track this script
 wandb.init(
     # set the wandb project where this run will be logged
@@ -29,7 +30,8 @@ wandb.init(
     "criterion": "nn.CrossEntropyLoss()",
     "p": 0.5,
     "lr modifier": "Multiplied by 0.1 every 5 iterations",
-    "seed": 42
+    "seed": 42,
+    "weight decay": 1e-4
     }
 )
 
@@ -39,6 +41,7 @@ imageDim = 28*28
 lrng_rate = 0.01
 training_epochs = 20
 p = 0.5
+wd = 1e-4
 
 # Create Fully Connected Network
 class My_CNN(nn.Module): 
@@ -76,6 +79,14 @@ class My_CNN(nn.Module):
         out = self.fc2(out) #to ask 
         return out
 
+def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
+    decay, no_decay = [], []
+    for name, param in net.named_parameters():
+        if not param.requires_grad: continue # frozen weights		            
+        if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list: no_decay.append(param)
+        else: decay.append(param)
+    return [{'params': no_decay, 'weight_decay': 0.}, {'params': decay, 'weight_decay': l2_value}]
+
 def check_accuracy(loader, model):
     num_correct = 0 
     num_samples = 0 
@@ -108,8 +119,10 @@ test_loader = get_test_loader(data_dir = './data', batch_size = 64)
 model = My_CNN(imageDim,62).to(device)
 
 # Loss and optimiser 
+params = add_weight_decay(model, wd)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)
+optimizer = optim.SGD(params=params, lr=lrng_rate, momentum = 0.9)
+#print(optimizer.param_groups)
 #optimizer = optim.Adam(params=model.parameters(), lr=lrng_rate)
 
 #Train network

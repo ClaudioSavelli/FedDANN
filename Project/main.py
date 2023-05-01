@@ -1,6 +1,9 @@
 import os
 import json
 from collections import defaultdict
+import wandb
+import sys
+
 
 import torch
 import random
@@ -93,11 +96,16 @@ def read_femnist_dir(data_dir):
     data = defaultdict(lambda: {})
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
+    i = 1
     for f in files:
+        sys.stdout.write('\r')
+        sys.stdout.write("%d / %d" % (i, len(files)))
+        sys.stdout.flush()
         file_path = os.path.join(data_dir, f)
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
         data.update(cdata['user_data'])
+        i += 1
     return data
 
 
@@ -179,7 +187,7 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
     set_seed(args.seed)
-    
+
     wandb.init(
         # set the wandb project where this run will be logged
         project="Femnist part 1",
@@ -190,7 +198,7 @@ def main():
         "learning_rate": args.lr,
         "batch size": args.bs,
         "weight decay": args.wd,
-        "momentum": args.momentum,
+        "momentum": args.m,
         "seed": args.seed,
         "isNiid": args.niid,
         "model": args.model,
@@ -207,6 +215,7 @@ def main():
     )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(device)
     torch.manual_seed(args.seed)
 
     print(f'Initializing model...')
@@ -224,7 +233,7 @@ def main():
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train()
 
-    #wandb.finish()
+    wandb.finish()
 
 if __name__ == '__main__':
     main()
