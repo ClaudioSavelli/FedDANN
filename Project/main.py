@@ -96,6 +96,7 @@ def read_femnist_dir(data_dir):
     data = defaultdict(lambda: {})
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
+    #files = np.random.choice(files, size = len(files)//4)
     i = 1
     for f in files:
         sys.stdout.write('\r')
@@ -229,7 +230,7 @@ def main():
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
 
     server = Server(args, train_clients, test_clients, model, metrics)
-    server.train()
+    server.train(args)
 
     wandb.finish()
 

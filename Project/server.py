@@ -22,7 +22,7 @@ class Server:
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
         return np.random.choice(self.train_clients, num_clients, replace=False)
 
-    def train_round(self, clients, n_round):
+    def train_round(self, clients, n_round, args):
         """
             This method trains the model with the dataset of the clients. It handles the training at single round level
             :param clients: list of all the clients to train
@@ -37,7 +37,7 @@ class Server:
             sys.stdout.write("Round %d: [%-20s] %d%%" % (n_round+1, '=' * int(20 * j), 100 * j))
             sys.stdout.flush()
 
-            n_samples, model_parameters = c.train()
+            n_samples, model_parameters = c.train(args)
             updates.append( (n_samples, model_parameters) )
         return updates
 
@@ -68,7 +68,7 @@ class Server:
 
 
 
-    def train(self):
+    def train(self, args):
         """
         This method orchestrates the training the evals and tests at rounds level
         """
@@ -81,7 +81,7 @@ class Server:
 
             clients = self.select_clients()
             
-            updates = self.train_round(clients, r)
+            updates = self.train_round(clients, r, args)
             new_parameters = self.aggregate(updates)
             sys.stdout.write("\n")
 
