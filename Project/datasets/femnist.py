@@ -23,13 +23,13 @@ class Femnist(Dataset):
                  transform: tr.Compose,
                  client_name: str):
         super().__init__()
-        self.samples = [[np.array(image, dtype=np.float16), np.uint8(label)] for image, label in zip(data['x'], data['y'])]
+        self.samples = [[image, label] for image, label in zip(data['x'], data['y'])]
         self.transform = transform
         self.client_name = client_name
 
     def __getitem__(self, index: int) -> Any:
         img, label = self.samples[index]
-        img = img.reshape((28,28))
+        img = np.array(img, dtype=np.float32).reshape((28,28))
         img = self.transform(img)
         return img, label
 

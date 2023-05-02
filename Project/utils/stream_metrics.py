@@ -42,6 +42,7 @@ class StreamClsMetrics(Metrics):
             "Mean Acc": acc_cls,
             "Class Acc": cls_acc
         }
+        return self.results
 
     def __str__(self):
         string = "\n"

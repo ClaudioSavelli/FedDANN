@@ -107,8 +107,10 @@ class Server:
         for c in self.train_clients:
             c.test(self.metrics['eval_train'])
 
-        self.metrics['eval_train'].get_results()
-        wandb.log({"metrics train": self.metrics['eval_train']})
+        results = self.metrics['eval_train'].get_results()
+        for k, v in results.items(): 
+            name = k + '_train'
+            wandb.log({name: v})
         print(self.metrics['eval_train'])
 
 
@@ -121,6 +123,8 @@ class Server:
         for c in self.test_clients:
             c.test(self.metrics['test'])
 
-        self.metrics['test'].get_results()
-        wandb.log({"metrics test": self.metrics['test']})
+        results = self.metrics['test'].get_results()
+        for k, v in results.items(): 
+            name = k + '_test'
+            wandb.log({name: v})
         print(self.metrics['test'])

@@ -14,7 +14,7 @@ def get_parser():
     parser.add_argument('--hnm', action='store_true', default=False, help='Use hard negative mining reduction or not')
     parser.add_argument('--lr', type=float, default=1, help='learning rate')
     parser.add_argument('--bs', type=int, default=4, help='batch size')
-    parser.add_argument('--wd', type=float, default=0, help='weight decay')
+    parser.add_argument('--wd', type=float, default=1e-3, help='weight decay')
     parser.add_argument('--m', type=float, default=0.9, help='momentum')
     parser.add_argument('--print_train_interval', type=int, default=50, help='client print train interval')
     parser.add_argument('--print_test_interval', type=int, default=250, help='client print test interval')
