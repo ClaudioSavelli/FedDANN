@@ -43,6 +43,14 @@ class Client:
             return self.model(images)
         raise NotImplementedError
 
+    def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
+        decay, no_decay = [], []
+        for name, param in net.named_parameters():
+            if not param.requires_grad: continue # frozen weights		            
+            if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list: no_decay.append(param)
+            else: decay.append(param)
+        return [{'params': no_decay, 'weight_decay': 0.}, {'params': decay, 'weight_decay': l2_value}]
+
     def run_epoch(self, cur_epoch, optimizer):
         """
         This method locally trains the model with the dataset of the client. It handles the training at mini-batch level
@@ -67,14 +75,15 @@ class Client:
             optimizer.step()
 
 
-    def train(self):
+    def train(self, args):
         """
         This method locally trains the model with the dataset of the client. It handles the training at epochs level
         (by calling the run_epoch method for each local epoch of training)
         :return: length of the local dataset, copy of the model parameters
         """
 
-        optmz = optim.SGD(params=self.model.parameters(), lr=self.args.lr, momentum=0.9)
+        params = add_weight_decay(self.model, args.wd)
+        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=0.9)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
