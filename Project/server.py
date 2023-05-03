@@ -109,8 +109,9 @@ class Server:
 
         results = self.metrics['eval_train'].get_results()
         for k, v in results.items(): 
-            name = k + '_train'
-            wandb.log({name: v})
+            if k != 'Class Acc': 
+                name = k + '_train'
+                wandb.log({name: v})
         print(self.metrics['eval_train'])
 
 
@@ -124,7 +125,8 @@ class Server:
             c.test(self.metrics['test'])
 
         results = self.metrics['test'].get_results()
-        for k, v in results.items(): 
-            name = k + '_test'
-            wandb.log({name: v})
+        for k, v in results.items():
+            if k != 'Class Acc': 
+                name = k + '_test'
+                wandb.log({name: v})
         print(self.metrics['test'])

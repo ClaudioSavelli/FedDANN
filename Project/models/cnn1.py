@@ -42,14 +42,33 @@ class My_CNN(nn.Module):
         self.fc2 = nn.Linear(2048, num_classes)
 
         self.dropout = nn.Dropout(0.5)
-
+    
     def forward(self, x): 
+        print('1')
+        #print(x)
+        print(x.isnan().any())
         out = self.dropout(self.layer1(x))
+        print('2')
+        #print(out)
+        print(out.isnan().any())
         out = self.dropout(self.layer2(out))
+        print('3')
+        #print(out)
+        print(out.isnan().any())
         out = out.reshape(out.shape[0],-1)
+        print('4')
+        #print(out)
+        print(out.isnan().any())
         #print('x_shape:',out.shape)
         out = self.dropout(self.fc1(out))
+        print('5')
+        #print(out)
+        print(out.isnan().any())
         out = self.fc2(out) #to ask 
+        print('6')
+        #print(out)
+        print(out.isnan().any())
+        input("Press Enter to continue...")
         return out
 
 def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
@@ -60,6 +79,7 @@ def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.
         else: decay.append(param)
     return [{'params': no_decay, 'weight_decay': 0.}, {'params': decay, 'weight_decay': l2_value}]
 
+'''
 def check_accuracy(loader, model):
     num_correct = 0 
     num_samples = 0 
@@ -78,3 +98,4 @@ def check_accuracy(loader, model):
 
         print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples)*100:.2f}')
         return round((float(num_correct) / float(num_samples))*100, 2) 
+        '''

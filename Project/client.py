@@ -43,7 +43,7 @@ class Client:
             return self.model(images)
         raise NotImplementedError
 
-    def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
+    def add_weight_decay(self, net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
         decay, no_decay = [], []
         for name, param in net.named_parameters():
             if not param.requires_grad: continue # frozen weights		            
@@ -64,6 +64,11 @@ class Client:
 
             # forward
             outputs = self.model(images)
+            #print('outputs: ')
+            #print(outputs)
+            #print('labels: ')
+            #print(labels)
+            #print('end \n \n')
 
             loss = self.criterion(outputs, labels)
 
@@ -82,7 +87,7 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
 
-        params = add_weight_decay(self.model, args.wd)
+        params = self.add_weight_decay(self.model, args.wd)
         optmz = optim.SGD(params=params, lr=self.args.lr, momentum=0.9)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
