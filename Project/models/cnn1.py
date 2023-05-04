@@ -6,13 +6,9 @@ import torchvision. datasets as dsets
 from torch.utils.data import DataLoader 
 import torchvision.transforms as transforms
 import numpy as np
-import sys
 from math import sqrt
 
 from utils import *
-
-import wandb
-import random
 
 imageDim = 28*28
 
@@ -42,6 +38,8 @@ class My_CNN(nn.Module):
         self.fc2 = nn.Linear(2048, num_classes)
 
         self.dropout = nn.Dropout(0.5)
+
+        self.num_classes = num_classes
     
     def forward(self, x): 
         print('1')
@@ -69,6 +67,7 @@ class My_CNN(nn.Module):
         #print(out)
         print(out.isnan().any())
         input("Press Enter to continue...")
+        #out = torch.nn.functional.softmax(out, dim = self.num_classes)
         return out
 
 def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/

@@ -4,7 +4,7 @@ import torch
 from torch import optim, nn
 from collections import defaultdict
 from torch.utils.data import DataLoader
-import sys
+import copy
 
 from utils.utils import HardNegativeMining, MeanReduction
 
@@ -88,25 +88,33 @@ class Client:
         """
 
         params = self.add_weight_decay(self.model, args.wd)
-        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=0.9)
+        #params = self.model.parameters()
+        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=self.args.m)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
+        new_sd = self.model.state_dict()
+        del self.model
+
         ## model.parameters returns
-        return len(self.train_loader.dataset), self.model.state_dict()
+        return len(self.train_loader.dataset), new_sd
+    
     def test(self, metric):
         """
         This method tests the model on the local dataset of the client.
         :param metric: StreamMetric object
         """
 
+
         with torch.no_grad():
             for i, (img, labels) in enumerate(self.test_loader):
                 img = img.to(device=self.device)
                 labels = labels.to(device=self.device)
                 outputs = self._get_outputs(img)
-
+                print(labels)
+                print(outputs)
+                input()
                 self.update_metric(metric, outputs, labels)
 
-    def change_model(self, model):
-        self.model = model #deepcopy?
+    def change_model(self, model, dcopy=True):
+        self.model = copy.deepcopy(model) if dcopy else model #deepcopy?

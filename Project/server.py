@@ -5,6 +5,7 @@ import wandb
 
 import numpy as np
 import torch
+import gc
 import sys
 
 
@@ -37,8 +38,18 @@ class Server:
             sys.stdout.write("Round %d: [%-20s] %d%%" % (n_round+1, '=' * int(20 * j), 100 * j))
             sys.stdout.flush()
 
+            #print("ANDIAMO SIAMO IN ", len(clients))
+            #print('\n')
+            #print('client n. ', i)
+            #print(list(c.model.state_dict().items())[0])
             n_samples, model_parameters = c.train(args)
+            #print(list(c.model.state_dict().items())[0])
+            #input("press enter.")
+
+            #print(n_samples, " ANDIAMO AL PROSSIMO CLIENT")
             updates.append( (n_samples, model_parameters) )
+        gc.collect()
+        torch.cuda.empty_cache()
         return updates
 
     def aggregate(self, updates):
@@ -49,6 +60,7 @@ class Server:
         """
 
         ### INITIALIZE NEW (ZERO) STATE DICTIONARY
+        #print("I'm aggregating!")
         model_sd = self.model.state_dict()
         new_sd = {}
         total_count = 0
@@ -81,21 +93,30 @@ class Server:
 
             clients = self.select_clients()
             
+            # Update parameters
+            for c in clients:
+                c.change_model(self.model)
+
             updates = self.train_round(clients, r, args)
             new_parameters = self.aggregate(updates)
             sys.stdout.write("\n")
 
+            #print(list(self.model.state_dict().items())[0])
             self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
-
-            # Update parameters
-            for c in self.train_clients:
-                c.change_model(self.model)
+            #print(list(self.model.state_dict().items())[0])
+            #input("press enter.")
 
             if (r+1) % self.args.eval_interval == 0:
+                for c in self.train_clients:
+                    c.change_model(self.model, dcopy=False)
                 self.eval_train()
+                input("press enter.")
 
             if (r+1) % self.args.test_interval == 0:
+                for c in self.test_clients:
+                    c.change_model(self.model, dcopy=False)
                 self.test()
+                input("press enter.")
 
     def eval_train(self):
         """
