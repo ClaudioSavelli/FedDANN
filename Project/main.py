@@ -95,13 +95,14 @@ def read_femnist_dir(data_dir):
     data = defaultdict(lambda: {})
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    files = np.random.choice(files, size = len(files)//4)
+    #files = np.random.choice(files, size = len(files)//4)
     i = 1
     for f in files:
         sys.stdout.write('\r')
         sys.stdout.write("%d / %d" % (i, len(files)))
         sys.stdout.flush()
         file_path = os.path.join(data_dir, f)
+        
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
         data.update(cdata['user_data'])
@@ -109,8 +110,32 @@ def read_femnist_dir(data_dir):
     return data
 
 
+def my_read_femnist_dir(data_dir, transform):
+    data = []
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+    #files = np.random.choice(files, size = len(files)//4)
+    i = 1
+    for f in files:
+        sys.stdout.write('\r')
+        sys.stdout.write("%d / %d" % (i, len(files)))
+        sys.stdout.flush()
+        file_path = os.path.join(data_dir, f)
+        
+        with open(file_path, 'r') as inf:
+            cdata = json.load(inf)
+            for user, images in cdata['user_data'].items():    
+                data.append(Femnist(images, transform, user))
+        i += 1
+    
+    return data
+
+
 def read_femnist_data(train_data_dir, test_data_dir):
     return read_femnist_dir(train_data_dir), read_femnist_dir(test_data_dir)
+
+def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform):
+    return my_read_femnist_dir(train_data_dir, train_transform), my_read_femnist_dir(test_data_dir, test_transform)
 
 
 def get_datasets(args):
@@ -139,14 +164,15 @@ def get_datasets(args):
         niid = args.niid
         train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
         test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
-        train_data, test_data = read_femnist_data(train_data_dir, test_data_dir)
+        #train_data, test_data = read_femnist_data(train_data_dir, test_data_dir)
+        train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, train_transforms, test_transforms)
 
-        train_datasets, test_datasets = [], []
+        #train_datasets, test_datasets = [], []
 
-        for user, data in train_data.items():
-            train_datasets.append(Femnist(data, train_transforms, user))
-        for user, data in test_data.items():
-            test_datasets.append(Femnist(data, test_transforms, user))
+        #for user, data in train_data.items():
+        #    train_datasets.append(Femnist(data, train_transforms, user))
+        #for user, data in test_data.items():
+        #    test_datasets.append(Femnist(data, test_transforms, user))
 
     else:
         raise NotImplementedError
@@ -187,6 +213,8 @@ def main():
     set_seed(args.seed)
 
     wandb.init(
+        mode="disabled",
+
         # set the wandb project where this run will be logged
         project="Femnist part 1",
         
@@ -227,6 +255,8 @@ def main():
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
+    print("somma img train = ", sum([len(x) for x in train_datasets]))
+    input("buona fortuna")
 
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train(args)
@@ -235,3 +265,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
