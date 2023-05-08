@@ -68,6 +68,7 @@ class Client:
             #print(outputs)
             #print('labels: ')
             #print(labels)
+            #input('press enter.')
             #print('end \n \n')
 
             loss = self.criterion(outputs, labels)
@@ -87,8 +88,8 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
 
-        params = self.add_weight_decay(self.model, args.wd)
-        #params = self.model.parameters()
+        #params = self.add_weight_decay(self.model, args.wd)
+        params = self.model.parameters()
         optmz = optim.SGD(params=params, lr=self.args.lr, momentum=self.args.m)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
@@ -111,9 +112,9 @@ class Client:
                 img = img.to(device=self.device)
                 labels = labels.to(device=self.device)
                 outputs = self._get_outputs(img)
-                print(labels)
-                print(outputs)
-                input()
+                #print(labels)
+                #print(outputs)
+                #input()
                 self.update_metric(metric, outputs, labels)
 
     def change_model(self, model, dcopy=True):

@@ -77,6 +77,9 @@ class My_CNN(nn.Module):
         #print('x_shape:',out.shape)
         out = self.dropout(self.fc1(out))
         out = self.fc2(out) #to ask 
+        if(out.isnan().any()):
+            print(out.isnan().any())
+            input("Press Enter to continue...")
         return out
 
 def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
@@ -159,6 +162,9 @@ for epoch in range(training_epochs):
         outputs = model(data)
         #print(np.shape(targets))
         #print(np.shape(outputs))
+        #print(targets)
+        #print(outputs)
+
         loss = criterion(outputs, targets)
 
         #backward 

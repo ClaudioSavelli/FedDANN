@@ -78,8 +78,8 @@ class Server:
 
             #print(n_samples, " ANDIAMO AL PROSSIMO CLIENT")
             updates.append( (n_samples, model_parameters) )
-        gc.collect()
-        torch.cuda.empty_cache()
+        #gc.collect()
+        #torch.cuda.empty_cache()
         return updates
 
     def aggregate(self, updates):
@@ -137,16 +137,18 @@ class Server:
             #input("press enter.")
 
             if (r+1) % self.args.eval_interval == 0:
+                gc.collect()
+                torch.cuda.empty_cache()
                 for c in self.train_clients:
                     c.change_model(self.model, dcopy=False)
                 self.eval_train()
-                input("press enter.")
+                #input("press enter.")
 
             if (r+1) % self.args.test_interval == 0:
                 for c in self.test_clients:
                     c.change_model(self.model, dcopy=False)
                 self.test()
-                input("press enter.")
+                #input("press enter.")
 
     def eval_train(self):
         """
