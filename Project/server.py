@@ -23,6 +23,36 @@ class Server:
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
         return np.random.choice(self.train_clients, num_clients, replace=False)
 
+    def biased_client_selection(self):
+        num_tot_clients = len(self.train_clients)
+        high_prob = int(0.1 * num_tot_clients)
+        low_prob = int(0.3 * num_tot_clients)
+        other_prob = num_tot_clients - high_prob - low_prob
+
+        picked_users = []
+        while len(picked_users) < self.args.clients_per_round:
+            rand_num = np.random.random()
+            user = None
+
+            while user == None:
+                if rand_num <= 0.5:
+                    # prendi high probability
+                    user = np.random.choice(self.train_clients[ : high_prob])
+                elif 0.5 < rand_num < 0.999:
+                    # prendi mid probability
+                    user = np.random.choice(self.train_clients[high_prob : num_tot_clients-low_prob])
+                else:
+                    # prendi low probability
+                    user = np.random.choice(self.train_clients[num_tot_clients-low_prob : ])
+
+                if user.name in [x.name for x in picked_users]:
+                    user = None
+
+            picked_users.append(user)
+
+        return picked_users
+
+
     def train_round(self, clients, n_round, args):
         """
             This method trains the model with the dataset of the clients. It handles the training at single round level
