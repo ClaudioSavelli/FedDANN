@@ -213,7 +213,7 @@ def main():
     set_seed(args.seed)
 
     wandb.init(
-        mode="disabled",
+        #mode="disabled",
 
         # set the wandb project where this run will be logged
         project="Femnist part 1",
@@ -251,12 +251,11 @@ def main():
 
     print('Generate datasets...')
     train_datasets, test_datasets = get_datasets(args)
-    print('Done.')
+    print('\nDone.')
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
-    print("somma img train = ", sum([len(x) for x in train_datasets]))
-    input("buona fortuna")
+    #print("somma img train = ", sum([len(x) for x in train_datasets]))
 
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train(args)

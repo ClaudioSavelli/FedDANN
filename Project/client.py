@@ -88,9 +88,9 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
 
-        #params = self.add_weight_decay(self.model, args.wd)
-        params = self.model.parameters()
-        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=self.args.m)
+        params = self.add_weight_decay(self.model, args.wd)
+        #params = self.model.parameters()
+        optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
