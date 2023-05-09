@@ -15,8 +15,8 @@ class Client:
         self.args = args
         self.dataset = dataset
         self.name = self.dataset.client_name
-        # self.model = model
-        self.model = copy.deepcopy(model)
+        self.model = model
+        #self.model = copy.deepcopy(model)
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False) # P
@@ -119,5 +119,5 @@ class Client:
                 self.update_metric(metric, outputs, labels)
 
     def change_model(self, model, dcopy=True):
-        self.model.load_state_dict( model.state_dict() )
-        #self.model = copy.deepcopy(model) if dcopy else model #deepcopy?
+        #self.model.load_state_dict( model.state_dict() )
+        self.model = copy.deepcopy(model) if dcopy else model #deepcopy?
