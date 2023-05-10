@@ -16,6 +16,7 @@ def get_parser():
     parser.add_argument('--bs', type=int, default=4, help='batch size')
     parser.add_argument('--wd', type=float, default=1e-4, help='weight decay')
     parser.add_argument('--m', type=float, default=0.9, help='momentum')
+    parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
     parser.add_argument('--print_train_interval', type=int, default=100, help='client print train interval')
     parser.add_argument('--print_test_interval', type=int, default=500, help='client print test interval')
     parser.add_argument('--eval_interval', type=int, default=100, help='eval interval')

@@ -76,7 +76,10 @@ class Client:
 
             # backward
             optimizer.zero_grad()
+            #loss, hidden = self.model(images, hidden, labels)
             loss.backward()
+
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
 
             # gradient descent or adam step
             optimizer.step()
