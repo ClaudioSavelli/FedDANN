@@ -52,7 +52,7 @@ class Server:
 
         return picked_users
 
-    def power_of_choice_selection(self, d):
+    def power_of_choice_selection(self):
         # Create dataset-size probabilities
         client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
         total_samples = np.sum(client_dataset_sizes)
@@ -60,7 +60,7 @@ class Server:
 
         # Get first d clients
         # size = d*self.args.clients_per_round ?????
-        A_client_set = np.random.choice(self.train_clients, size=d, replace=False, p=client_probabilities)
+        A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
 
         # Update models
         for c in A_client_set:
@@ -68,9 +68,9 @@ class Server:
 
         # Get losses
         A_client_set_losses = np.array([c.get_local_loss() for c in A_client_set])
-
+        
         # Choose highest loss clients
-        active_clients_index = np.argmax(A_client_set_losses)[ : min(d,self.args.clients_per_round)]
+        active_clients_index = np.argsort(-A_client_set_losses)[ : min(self.args.d,self.args.clients_per_round)]
         active_clients = A_client_set[active_clients_index]
 
         return active_clients
@@ -148,7 +148,7 @@ class Server:
             elif self.args.client_selection == 'biased':
                 clients = self.biased_client_selection()
             elif self.args.client_selection == 'pow':
-                clients = self.power_of_choice_selection(self.args.d)
+                clients = self.power_of_choice_selection()
             
             # Update parameters
             for c in clients:
