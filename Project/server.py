@@ -82,9 +82,9 @@ class Server:
             :return: model updates gathered from the clients, to be aggregated
         """
         updates = []
+        n = len(clients)
         for i, c in enumerate(clients):
             # loading bar
-            n = len(clients)
             sys.stdout.write('\r')
             j = (i + 1) / n
             sys.stdout.write("Round %d: [%-20s] %d%%" % (n_round+1, '=' * int(20 * j), 100 * j))
@@ -179,7 +179,14 @@ class Server:
 
         self.metrics['eval_train'].reset()
 
-        for c in self.train_clients:
+        n = len(self.train_clitents)
+        for i,c in enumerate(self.train_clients):
+            # loading bar
+            sys.stdout.write('\r')
+            j = (i + 1) / n
+            sys.stdout.write("Evaluating train clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
+            sys.stdout.flush()
+
             c.test(self.metrics['eval_train'])
 
         results = self.metrics['eval_train'].get_results()
@@ -196,7 +203,15 @@ class Server:
         """
         self.metrics['test'].reset()
 
-        for c in self.test_clients:
+        n = len(self.test_clients)
+        for i,c in enumerate(self.test_clients):
+            ### loading bar
+            sys.stdout.write('\r')
+            j = (i + 1) / n
+            sys.stdout.write("Evaluating test clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
+            sys.stdout.flush()
+            ###
+
             c.test(self.metrics['test'])
 
         results = self.metrics['test'].get_results()
