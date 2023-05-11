@@ -65,12 +65,6 @@ class Client:
 
             # forward
             outputs = self.model(images)
-            #print('outputs: ')
-            #print(outputs)
-            #print('labels: ')
-            #print(labels)
-            #input('press enter.')
-            #print('end \n \n')
 
             loss = self.criterion(outputs, labels)
 
@@ -83,6 +77,7 @@ class Client:
 
             # gradient descent or adam step
             optimizer.step()
+
 
 
     def train(self, args):
@@ -124,3 +119,22 @@ class Client:
     def change_model(self, model, dcopy=True):
         #self.model.load_state_dict( model.state_dict() )
         self.model = copy.deepcopy(model) if dcopy else model #deepcopy?
+
+    def get_local_loss(self):
+        params = self.model.parameters()
+        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=self.args.m)
+
+        local_loss = 0
+        for cur_step, (images, labels) in enumerate(self.train_loader):
+            # Get data to cuda if possible
+            images = images.to(self.device)
+            labels = labels.to(self.device)
+
+            outputs = self.model(images)
+            loss = self.criterion(outputs, labels)
+            loss.backward()
+            local_loss += loss.item() * len(labels)
+
+        local_loss = local_loss / len(self.dataset)
+
+        return local_loss

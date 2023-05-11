@@ -74,9 +74,14 @@ def get_transforms(args):
         mean=0.1736,
         std=0.3248,
         )
+
+        angles = [0, 15, 30, 45, 60, 75]
+        out_angle = angles.pop( np.random.randint(len(angles)) )
+
         train_transforms = nptr.Compose([
             transforms.ToPILImage(),
             transforms.ToTensor(),
+            #transforms.rotate(np.random.choice(angles) if args.rotateFemnist else 0),
             normalize,
             #nptr.Normalize((0.5,), (0.5,))
         ])
