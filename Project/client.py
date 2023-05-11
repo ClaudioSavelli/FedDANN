@@ -16,6 +16,7 @@ class Client:
         self.dataset = dataset
         self.name = self.dataset.client_name
         self.model = model
+        #self.model = copy.deepcopy(model)
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False) # P
@@ -69,7 +70,10 @@ class Client:
 
             # backward
             optimizer.zero_grad()
+            #loss, hidden = self.model(images, hidden, labels)
             loss.backward()
+
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
 
             # gradient descent or adam step
             optimizer.step()
@@ -83,9 +87,9 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
 
-        #params = self.add_weight_decay(self.model, args.wd)
-        params = self.model.parameters()
-        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=self.args.m)
+        params = self.add_weight_decay(self.model, args.wd)
+        #params = self.model.parameters()
+        optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m)
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
@@ -113,6 +117,7 @@ class Client:
                 self.update_metric(metric, outputs, labels)
 
     def change_model(self, model, dcopy=True):
+        #self.model.load_state_dict( model.state_dict() )
         self.model = copy.deepcopy(model) if dcopy else model #deepcopy?
 
     def get_local_loss(self):

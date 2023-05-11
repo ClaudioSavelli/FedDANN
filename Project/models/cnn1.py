@@ -45,24 +45,70 @@ class My_CNN(nn.Module):
         #print('1')
         #print(x)
         #print(x.isnan().any())
+        if x.isnan().any():
+            print('1')
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
+            input("press enter to continue.")
+
+        
         out = self.dropout(self.layer1(x))
         #print('2')
+        if out.isnan().any():
+            print('2')
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
+            input("press enter to continue.")
         #print(out)
         #print(out.isnan().any())
+
+
         out = self.dropout(self.layer2(out))
+        if out.isnan().any():
+            print('3')
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
+            input("press enter to continue.")
         #print('3')
         #print(out)
         #print(out.isnan().any())
+
+
         out = out.reshape(out.shape[0],-1)
+        if out.isnan().any():
+            print('4')
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
+            input("press enter to continue.")
         #print('4')
         #print(out)
         #print(out.isnan().any())
         #print('x_shape:',out.shape)
+
+
         out = self.dropout(self.fc1(out))
+        if out.isnan().any():
+            print('5')
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
+            input("press enter to continue.")
         #print('5')
         #print(out)
         #print(out.isnan().any())
+
+
         out = self.fc2(out) #to ask 
+        if out.isnan().any():
+            print('6')
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
+            input("press enter to continue.")
         #print('6')
         #print(out)
         #if(out.isnan().any()):

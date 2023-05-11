@@ -119,7 +119,7 @@ def my_read_femnist_dir(data_dir, transform):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    #files = np.random.choice(files, size = len(files)//4)
+    files = np.random.choice(files, size = len(files)//4)
     i = 1
     for f in files:
         sys.stdout.write('\r')
@@ -230,6 +230,7 @@ def main():
         "batch size": args.bs,
         "weight decay": args.wd,
         "momentum": args.m,
+        "clipping gradient": args.clip, 
         "seed": args.seed,
         "isNiid": args.niid,
         "model": args.model,
@@ -256,12 +257,11 @@ def main():
 
     print('Generate datasets...')
     train_datasets, test_datasets = get_datasets(args)
-    print('Done.')
+    print('\nDone.')
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
-    print("somma img train = ", sum([len(x) for x in train_datasets]))
-    input("buona fortuna")
+    #print("somma img train = ", sum([len(x) for x in train_datasets]))
 
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train(args)
