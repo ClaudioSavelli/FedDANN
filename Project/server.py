@@ -68,7 +68,7 @@ class Server:
 
         # Get losses
         A_client_set_losses = np.array([c.get_local_loss() for c in A_client_set])
-        
+
         # Choose highest loss clients
         active_clients_index = np.argsort(-A_client_set_losses)[ : min(self.args.d,self.args.clients_per_round)]
         active_clients = A_client_set[active_clients_index]
@@ -184,7 +184,7 @@ class Server:
 
         self.metrics['eval_train'].reset()
 
-        n = len(self.train_clitents)
+        n = len(self.train_clients)
         for i,c in enumerate(self.train_clients):
             # loading bar
             sys.stdout.write('\r')
