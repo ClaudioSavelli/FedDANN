@@ -218,7 +218,7 @@ def main():
     set_seed(args.seed)
 
     wandb.init(
-        #mode="disabled",
+        mode="disabled",
 
         # set the wandb project where this run will be logged
         project="Femnist part 1",
@@ -237,12 +237,13 @@ def main():
         "num_rounds": args.num_rounds,
         "num_local_epochs": args.num_epochs,
         "clients_per_round": args.clients_per_round,
+        "client_selection": args.client_selection,
+        "pow_d": args.d, 
         "architecture": "CNN",
         "dataset": "FeMnist",
         "Optimiser": "SGD",
         "criterion": "CrossEntropyLoss",
         "p": 0.5,
-        "lr modifier": "Multiplied by 0.1 every 5 iterations",
         }
     )
 

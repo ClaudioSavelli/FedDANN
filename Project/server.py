@@ -143,7 +143,12 @@ class Server:
             # client_index = self.select_clients()
             # clients = [self.train_clients[i] for i in client_index]
 
-            clients = self.select_clients()
+            if self.args.client_selection == 'random': 
+                clients = self.select_clients()
+            elif self.args.client_selection == 'biased':
+                clients = self.biased_client_selection()
+            elif self.args.client_selection == 'pow':
+                clients = self.power_of_choice_selection(self.args.d)
             
             # Update parameters
             for c in clients:
