@@ -1,5 +1,4 @@
 import torch 
-import torch.nn as nn 
 import torch.optim as optim 
 import torch.nn.functional as F 
 import torchvision. datasets as dsets
@@ -13,14 +12,14 @@ from utils import *
 imageDim = 28*28
 
 # Create Fully Connected Network
-class My_CNN(nn.Module): 
+class My_CNN(torch.nn.Module): 
     def __init__(self, input_size, num_classes): 
         super(My_CNN, self).__init__()
         # First 2D convolutional layer, taking in 1 input channel (image),
         # outputting 32 convolutional features, with a square kernel size of 5
         self.layer1 = torch.nn.Sequential(
             torch.nn.Conv2d(1, 32, kernel_size=5),
-            torch.nn.BatchNorm2d(32),
+            #torch.nn.BatchNorm2d(32),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(kernel_size=2)) #32*12*12
         
@@ -28,16 +27,21 @@ class My_CNN(nn.Module):
         # outputting 32 convolutional features, with a square kernel size of 5
         self.layer2 = torch.nn.Sequential(
             torch.nn.Conv2d(32, 64, kernel_size=5),
-            torch.nn.BatchNorm2d(64),
+            #torch.nn.BatchNorm2d(64),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(kernel_size=2)) #64*4*4
 
         # First fully connected layer
-        self.fc1 = nn.Linear(1024, 2048)
+        self.fc1 = torch.nn.Sequential(
+            torch.nn.Linear(1024, 2048), 
+            torch.nn.ReLU())
+        
         # Second fully connected layer that outputs our 10 labels
-        self.fc2 = nn.Linear(2048, num_classes)
+        self.fc2 = torch.nn.Linear(2048, num_classes)
 
-        self.dropout = nn.Dropout(0.5)
+        self.dropout1 = torch.nn.Dropout(0.25)#fare un dropout per ogni layer e abbassare il valore a 0.25
+        self.dropout2 = torch.nn.Dropout(0.25)
+        self.dropout3 = torch.nn.Dropout(0.25)
 
         self.num_classes = num_classes
     
@@ -53,7 +57,7 @@ class My_CNN(nn.Module):
             input("press enter to continue.")
 
         
-        out = self.dropout(self.layer1(x))
+        out = self.dropout1(self.layer1(x))
         #print('2')
         if out.isnan().any():
             print('2')
@@ -65,7 +69,7 @@ class My_CNN(nn.Module):
         #print(out.isnan().any())
 
 
-        out = self.dropout(self.layer2(out))
+        out = self.dropout2(self.layer2(out))
         if out.isnan().any():
             print('3')
             for name, param in self.named_parameters():
@@ -90,7 +94,7 @@ class My_CNN(nn.Module):
         #print('x_shape:',out.shape)
 
 
-        out = self.dropout(self.fc1(out))
+        out = self.dropout3(self.fc1(out))
         if out.isnan().any():
             print('5')
             for name, param in self.named_parameters():

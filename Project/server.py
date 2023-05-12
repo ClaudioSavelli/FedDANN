@@ -150,6 +150,7 @@ class Server:
             elif self.args.client_selection == 'pow':
                 clients = self.power_of_choice_selection()
             
+            self.model.train()
             # Update parameters
             for c in clients:
                 c.change_model(self.model)
@@ -166,12 +167,14 @@ class Server:
             if (r+1) % self.args.eval_interval == 0:
                 gc.collect()
                 torch.cuda.empty_cache()
+                self.model.test()
                 for c in self.train_clients:
                     c.change_model(self.model, dcopy=False)
                 self.eval_train()
                 #input("press enter.")
 
             if (r+1) % self.args.test_interval == 0:
+                self.model.test()
                 for c in self.test_clients:
                     c.change_model(self.model, dcopy=False)
                 self.test()
@@ -183,6 +186,7 @@ class Server:
         """
 
         self.metrics['eval_train'].reset()
+
 
         n = len(self.train_clients)
         for i,c in enumerate(self.train_clients):

@@ -62,6 +62,7 @@ class Client:
             # Get data to cuda if possible
             images = images.to(self.device)
             labels = labels.to(self.device)
+        
 
             # forward
             outputs = self.model(images)
@@ -73,7 +74,7 @@ class Client:
             #loss, hidden = self.model(images, hidden, labels)
             loss.backward()
 
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
+            #torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
 
             # gradient descent or adam step
             optimizer.step()
@@ -87,9 +88,10 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
 
-        params = self.add_weight_decay(self.model, args.wd)
-        #params = self.model.parameters()
-        optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m)
+        #params = self.add_weight_decay(self.model, args.wd)
+        params = self.model.parameters()
+        optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m, weight_decay=args.wd)
+
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 

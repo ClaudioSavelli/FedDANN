@@ -17,19 +17,20 @@ import random
 
 # start a new wandb run to track this script
 wandb.init(
+    mode="disabled",
     # set the wandb project where this run will be logged
     project="EmnistBenchmark",
     
     # track hyperparameters and run metadata
     config={
-    "learning_rate": 0.01,
+    "learning_rate": 0.1,
     "architecture": "CNN",
     "dataset": "EMNIST",
     "epochs": 20,
     "Optimiser": "SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)",
     "criterion": "nn.CrossEntropyLoss()",
     "p": 0.5,
-    "lr modifier": "Multiplied by 0.1 every 5 iterations",
+    #"lr modifier": "Multiplied by 0.1 every 5 iterations",
     "seed": 42,
     "weight decay": 1e-4
     }
@@ -38,7 +39,7 @@ wandb.init(
 imageDim = 28*28
 
 #Hyperparameters
-lrng_rate = 0.01
+lrng_rate = 0.1
 training_epochs = 20
 p = 0.5
 wd = 1e-4
@@ -122,9 +123,10 @@ test_loader = get_test_loader(data_dir = './data', batch_size = 64)
 model = My_CNN(imageDim,62).to(device)
 
 # Loss and optimiser 
-params = add_weight_decay(model, wd)
+#params = add_weight_decay(model, wd)
+params = model.parameters()
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(params=params, lr=lrng_rate, momentum = 0.9)
+optimizer = optim.SGD(params=params, lr=lrng_rate, momentum = 0.9, weight_decay=wd)
 #print(optimizer.param_groups)
 #optimizer = optim.Adam(params=model.parameters(), lr=lrng_rate)
 
@@ -145,7 +147,7 @@ for epoch in range(training_epochs):
             print("Changing the learning rate from ", g['lr'])
             g['lr'] = g['lr'] * 0.1
             print("to ", g['lr'])
-
+    #model.train()
     for i, (data, targets) in enumerate(train_loader):
         #loading bar 
         n = len(train_loader)
