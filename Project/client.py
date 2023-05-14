@@ -20,6 +20,7 @@ class Client:
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False) # P
+
         self.criterion = nn.CrossEntropyLoss(ignore_index=255) # Da chiedere perchè abbiamo eliminato reduction='none'
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
@@ -43,14 +44,6 @@ class Client:
         elif self.args.model == 'cnn': 
             return self.model(images)
         raise NotImplementedError
-
-    def add_weight_decay(self, net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
-        decay, no_decay = [], []
-        for name, param in net.named_parameters():
-            if not param.requires_grad: continue # frozen weights		            
-            if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list: no_decay.append(param)
-            else: decay.append(param)
-        return [{'params': no_decay, 'weight_decay': 0.}, {'params': decay, 'weight_decay': l2_value}]
 
     def run_epoch(self, cur_epoch, optimizer):
         """
@@ -123,8 +116,6 @@ class Client:
         self.model = copy.deepcopy(model) if dcopy else model #deepcopy?
 
     def get_local_loss(self):
-        params = self.model.parameters()
-        optmz = optim.SGD(params=params, lr=self.args.lr, momentum=self.args.m)
 
         local_loss = 0
         for cur_step, (images, labels) in enumerate(self.train_loader):
@@ -134,7 +125,6 @@ class Client:
 
             outputs = self.model(images)
             loss = self.criterion(outputs, labels)
-            loss.backward()
             local_loss += loss.item() * len(labels)
 
         local_loss = local_loss / len(self.dataset)

@@ -74,7 +74,7 @@ def get_transforms(args):
         mean=0.1736,
         std=0.3248,
         )
-
+        #RICORDATI DI CAMBIARE IL CODICE PERCHè NON SI PUO' FARE DATA AUG SUL VALIDATION 
         angles = [0, 15, 30, 45, 60, 75]
         out_angle = angles.pop( np.random.randint(len(angles)) )
 
@@ -119,7 +119,7 @@ def my_read_femnist_dir(data_dir, transform):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    files = np.random.choice(files, size = len(files)//4)
+    #files = np.random.choice(files, size = len(files)//6)
     i = 1
     for f in files:
         sys.stdout.write('\r')
@@ -218,7 +218,7 @@ def main():
     set_seed(args.seed)
 
     wandb.init(
-        mode="disabled",
+        #mode="disabled",
 
         # set the wandb project where this run will be logged
         project="Femnist part 1",
@@ -230,7 +230,7 @@ def main():
         "batch size": args.bs,
         "weight decay": args.wd,
         "momentum": args.m,
-        "clipping gradient": args.clip, 
+        #"clipping gradient": args.clip, 
         "seed": args.seed,
         "isNiid": args.niid,
         "model": args.model,

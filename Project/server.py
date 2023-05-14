@@ -3,21 +3,46 @@ from collections import OrderedDict
 
 import wandb
 
+import random
 import numpy as np
 import torch
 import gc
 import sys
+
+import pandas as pd 
+
 
 
 class Server:
 
     def __init__(self, args, train_clients, test_clients, model, metrics):
         self.args = args
-        self.train_clients = train_clients
+        self.train_clients, self.validation_clients = self.split_train_val(train_clients)
         self.test_clients = test_clients
         self.model = model
         self.metrics = metrics
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
+
+        '''
+        print("train: \n", self.count_labels(self.train_clients))
+        input()
+        print("val: \n", self.count_labels(self.validation_clients))
+        input()        
+        print("test: \n", self.count_labels(self.test_clients))
+        input()'''
+
+    def count_labels(self, clients): 
+        res = list()
+        for element in clients: 
+            res += [element.dataset.samples[i][1] for i in range(len(element.dataset.samples))]
+        
+        return pd.Series(res).value_counts().to_string()
+
+
+    def split_train_val(self, train_clients): 
+        random.shuffle(train_clients)
+        l = len(train_clients)
+        return train_clients[:int(l*self.args.tf)], train_clients[int(l*self.args.tf):]
 
     def select_clients(self):
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
@@ -61,6 +86,8 @@ class Server:
         # Get first d clients
         # size = d*self.args.clients_per_round ?????
         A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
+        
+        self.model.train()
 
         # Update models
         for c in A_client_set:
@@ -164,17 +191,21 @@ class Server:
             #print(list(self.model.state_dict().items())[0])
             #input("press enter.")
 
-            if (r+1) % self.args.eval_interval == 0:
+            if (r+1) % self.args.gc == 0:
+                print("Doing Gargage Collector in GPU")
                 gc.collect()
                 torch.cuda.empty_cache()
-                self.model.test()
+                print("Done!")
+
+            if (r+1) % self.args.eval_interval == 0:
+                self.model.eval()
                 for c in self.train_clients:
                     c.change_model(self.model, dcopy=False)
                 self.eval_train()
                 #input("press enter.")
 
             if (r+1) % self.args.test_interval == 0:
-                self.model.test()
+                self.model.eval()
                 for c in self.test_clients:
                     c.change_model(self.model, dcopy=False)
                 self.test()
@@ -188,8 +219,8 @@ class Server:
         self.metrics['eval_train'].reset()
 
 
-        n = len(self.train_clients)
-        for i,c in enumerate(self.train_clients):
+        n = len(self.validation_clients)
+        for i,c in enumerate(self.validation_clients):
             # loading bar
             sys.stdout.write('\r')
             j = (i + 1) / n

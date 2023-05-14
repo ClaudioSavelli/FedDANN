@@ -1,95 +1,157 @@
 import torch 
 import torch.nn as nn 
 import torch.optim as optim 
-import torch.nn.functional as F 
-import torchvision. datasets as dsets
-from torch.utils.data import DataLoader 
+from torchvision import datasets
 import torchvision.transforms as transforms
-import numpy as np
+from torch.utils.data.sampler import SubsetRandomSampler
+from models.cnn1 import My_CNN
+
 import sys
+
+import numpy as np
 from math import sqrt
 
-from utils import *
-
 import wandb
-import random
 
+lrng_rate = 0.01
+training_epochs = 20
+p = 0.25
+wd = 1e-4
 
 # start a new wandb run to track this script
 wandb.init(
     mode="disabled",
     # set the wandb project where this run will be logged
-    project="EmnistBenchmark",
+    project="RealEmnistBenchmark",
     
     # track hyperparameters and run metadata
     config={
-    "learning_rate": 0.1,
+    "learning_rate": lrng_rate,
     "architecture": "CNN",
     "dataset": "EMNIST",
-    "epochs": 20,
+    "epochs": training_epochs,
     "Optimiser": "SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)",
     "criterion": "nn.CrossEntropyLoss()",
-    "p": 0.5,
+    "p": p,
     #"lr modifier": "Multiplied by 0.1 every 5 iterations",
     "seed": 42,
-    "weight decay": 1e-4
+    "weight decay": wd
     }
 )
 
 imageDim = 28*28
 
 #Hyperparameters
-lrng_rate = 0.1
-training_epochs = 20
-p = 0.5
-wd = 1e-4
 
-# Create Fully Connected Network
-class My_CNN(nn.Module): 
-    def __init__(self, input_size, num_classes): 
-        super(My_CNN, self).__init__()
-        # First 2D convolutional layer, taking in 1 input channel (image),
-        # outputting 32 convolutional features, with a square kernel size of 5
-        self.layer1 = torch.nn.Sequential(
-            torch.nn.Conv2d(1, 32, kernel_size=5),
-            torch.nn.BatchNorm2d(32),
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(kernel_size=2)) #32*12*12
-        
-        # Second 2D convolutional layer, taking in 1 input channel (image),
-        # outputting 32 convolutional features, with a square kernel size of 5
-        self.layer2 = torch.nn.Sequential(
-            torch.nn.Conv2d(32, 64, kernel_size=5),
-            torch.nn.BatchNorm2d(64),
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(kernel_size=2)) #64*4*4
+def get_train_valid_loader(data_dir,
+                           batch_size,
+                           augment,
+                           random_seed,
+                           valid_size=0.1,
+                           shuffle=True):
 
-        # First fully connected layer
-        self.fc1 = nn.Linear(1024, 2048)
-        # Second fully connected layer that outputs our 10 labels
-        self.fc2 = nn.Linear(2048, num_classes)
+    normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+    )
 
-        self.dropout = nn.Dropout(p)
+    # define transforms
+    valid_transform = transforms.Compose([
+            transforms.ToTensor(), 
+            normalize
+    ])
+    
+    train_transform = transforms.Compose([
+            transforms.ToTensor(),
+            normalize
+        ])
 
-    def forward(self, x): 
-        out = self.dropout(self.layer1(x))
-        out = self.dropout(self.layer2(out))
-        out = out.reshape(out.shape[0],-1)
-        #print('x_shape:',out.shape)
-        out = self.dropout(self.fc1(out))
-        out = self.fc2(out) #to ask 
-        if(out.isnan().any()):
-            print(out.isnan().any())
-            input("Press Enter to continue...")
-        return out
+    # load the dataset
+    train_dataset = datasets.EMNIST(
+        root=data_dir, train=True,split = 'byclass',
+        download=True, transform=train_transform,
+    )
 
-def add_weight_decay(net, l2_value, skip_list=()): #https://raberrytv.wordpress.com/2017/10/29/pytorch-weight-decay-made-easy/
-    decay, no_decay = [], []
-    for name, param in net.named_parameters():
-        if not param.requires_grad: continue # frozen weights		            
-        if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list: no_decay.append(param)
-        else: decay.append(param)
-    return [{'params': no_decay, 'weight_decay': 0.}, {'params': decay, 'weight_decay': l2_value}]
+    valid_dataset = datasets.EMNIST(
+        root=data_dir, train=True, split = 'byclass',
+        download=True, transform=valid_transform,
+    )
+    
+    num_train = len(train_dataset)
+    indices = list(range(num_train))
+    split = int(np.floor(valid_size * num_train))
+
+    if shuffle:
+        np.random.seed(random_seed)
+        np.random.shuffle(indices)
+
+    train_idx, valid_idx = indices[split:], indices[:split]
+    train_sampler = SubsetRandomSampler(train_idx)
+    valid_sampler = SubsetRandomSampler(valid_idx)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, sampler=train_sampler)
+ 
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset, batch_size=batch_size, sampler=valid_sampler)
+
+    return (train_loader, valid_loader)
+
+
+def get_test_loader(data_dir,
+                    batch_size,
+                    shuffle=True):
+
+    normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+    )
+
+    # define transform
+    transform = transforms.Compose([
+        transforms.ToTensor(), 
+        normalize
+    ])
+
+    dataset = datasets.EMNIST(
+        root=data_dir, train=False, split = 'byclass',
+        download=True, transform=transform,
+    )
+
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, shuffle=shuffle
+    )
+
+    return data_loader
+
+def evaluate_mean_std():
+    train_dataset = datasets.EMNIST(
+        root='./data', train=True,split = 'byclass',
+        download=True
+    )
+
+    mean = 0 
+    std = 0
+    for X, _ in train_dataset: 
+        convert_tensor = transforms.ToTensor()
+
+        X = convert_tensor(X)
+        mean += X.mean()
+        std += X.std()
+    mean = mean/len(train_dataset)
+    std = std/len(train_dataset)
+    print("mean: ",mean," std: ",std)
+
+    return mean, std
+
+
+
+
+# emnist dataset 
+#train_loader, valid_loader = get_train_valid_loader(data_dir = './data', batch_size = 64, augment = False, random_seed = 1)
+
+#test_loader = get_test_loader(data_dir = './data', batch_size = 64)
+#evaluate_mean_std()
 
 def check_accuracy(loader, model):
     num_correct = 0 
@@ -123,7 +185,6 @@ test_loader = get_test_loader(data_dir = './data', batch_size = 64)
 model = My_CNN(imageDim,62).to(device)
 
 # Loss and optimiser 
-#params = add_weight_decay(model, wd)
 params = model.parameters()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(params=params, lr=lrng_rate, momentum = 0.9, weight_decay=wd)
@@ -147,7 +208,7 @@ for epoch in range(training_epochs):
             print("Changing the learning rate from ", g['lr'])
             g['lr'] = g['lr'] * 0.1
             print("to ", g['lr'])
-    #model.train()
+    model.train()
     for i, (data, targets) in enumerate(train_loader):
         #loading bar 
         n = len(train_loader)
@@ -180,6 +241,7 @@ for epoch in range(training_epochs):
     #acc_tl = check_accuracy(train_loader, model)
     #acc_vl = check_accuracy(valid_loader, model)
     print("\n")
+    model.eval()
     wandb.log({"acc_train": check_accuracy(train_loader, model), "acc_valid": check_accuracy(valid_loader, model), "loss": loss.item()})
     wandb.log({"acc_test": check_accuracy(test_loader, model)})
 
