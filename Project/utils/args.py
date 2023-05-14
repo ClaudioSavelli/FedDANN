@@ -8,6 +8,8 @@ def get_parser():
     parser.add_argument('--client_selection', type=str, default = 'random', choices=['random', 'biased', 'pow'], required=False, help='client selection')
     parser.add_argument('--niid', action='store_true', default=False,
                         help='Run the experiment with the non-IID partition (IID by default). Only on FEMNIST dataset.')
+    parser.add_argument('--test_mode', action='store_true', default=False,
+                        help='Enable or disable test mode.')
     parser.add_argument('--model', type=str, default = 'cnn', help='model name')
     parser.add_argument('--num_rounds', type=int, default = 1000, help='number of rounds')
     parser.add_argument('--num_epochs', type=int, default = 1, help='number of local epochs')

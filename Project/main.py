@@ -115,11 +115,11 @@ def read_femnist_dir(data_dir):
     return data
 
 
-def my_read_femnist_dir(data_dir, transform):
+def my_read_femnist_dir(data_dir, transform, is_test_mode):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    #files = np.random.choice(files, size = len(files)//6)
+    if is_test_mode: files = np.random.choice(files, size = len(files)//6) 
     i = 1
     for f in files:
         sys.stdout.write('\r')
@@ -139,8 +139,8 @@ def my_read_femnist_dir(data_dir, transform):
 def read_femnist_data(train_data_dir, test_data_dir):
     return read_femnist_dir(train_data_dir), read_femnist_dir(test_data_dir)
 
-def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform):
-    return my_read_femnist_dir(train_data_dir, train_transform), my_read_femnist_dir(test_data_dir, test_transform)
+def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
+    return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), my_read_femnist_dir(test_data_dir, test_transform, is_test_mode)
 
 
 def get_datasets(args):
@@ -170,7 +170,7 @@ def get_datasets(args):
         train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
         test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
         #train_data, test_data = read_femnist_data(train_data_dir, test_data_dir)
-        train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, train_transforms, test_transforms)
+        train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, train_transforms, test_transforms, args.test_mode)
 
         #train_datasets, test_datasets = [], []
 
@@ -217,8 +217,9 @@ def main():
     args = parser.parse_args()
     set_seed(args.seed)
 
+    mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
-        #mode="disabled",
+        mode=mode_selected,
 
         # set the wandb project where this run will be logged
         project="Femnist part 1",

@@ -1,3 +1,4 @@
+import numpy as np
 import torch 
 import torch.nn as nn 
 import torch.optim as optim 
@@ -5,43 +6,61 @@ from torchvision import datasets
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from models.cnn1 import My_CNN
+from utils.stream_metrics import StreamClsMetrics
 
+from utils.args import get_parser
 import sys
-
-import numpy as np
-from math import sqrt
 
 import wandb
 
-lrng_rate = 0.01
-training_epochs = 20
+imageDim = 28*28
+
+def set_metrics():
+    num_classes = 62
+    
+    metrics = {
+            'eval_train': StreamClsMetrics(num_classes, 'eval_train'),
+            'test': StreamClsMetrics(num_classes, 'test')
+    }
+    
+    return metrics
+
+parser = get_parser()
+args = parser.parse_args()
+metrics = set_metrics()
+
 p = 0.25
-wd = 1e-4
+mode_selected = "disabled" if args.test_mode else "online"
+
 
 # start a new wandb run to track this script
 wandb.init(
-    mode="disabled",
+    mode=mode_selected,
     # set the wandb project where this run will be logged
     project="RealEmnistBenchmark",
     
     # track hyperparameters and run metadata
     config={
-    "learning_rate": lrng_rate,
+    "learning_rate": args.lr,
     "architecture": "CNN",
     "dataset": "EMNIST",
-    "epochs": training_epochs,
-    "Optimiser": "SGD(params=model.parameters(), lr=lrng_rate, momentum = 0.9)",
+    "epochs": args.num_epochs,
+    "momentum": args.m, 
+    "Optimiser": "SGD",
     "criterion": "nn.CrossEntropyLoss()",
     "p": p,
     #"lr modifier": "Multiplied by 0.1 every 5 iterations",
     "seed": 42,
-    "weight decay": wd
+    "weight decay": args.wd
     }
 )
 
-imageDim = 28*28
-
-#Hyperparameters
+@staticmethod
+def update_metric(metric, outputs, labels):
+    _, prediction = outputs.max(dim=1)
+    labels = labels.cpu().numpy()
+    prediction = prediction.cpu().numpy()
+    metric.update(labels, prediction)
 
 def get_train_valid_loader(data_dir,
                            batch_size,
@@ -124,6 +143,7 @@ def get_test_loader(data_dir,
 
     return data_loader
 
+'''
 def evaluate_mean_std():
     train_dataset = datasets.EMNIST(
         root='./data', train=True,split = 'byclass',
@@ -143,34 +163,26 @@ def evaluate_mean_std():
     print("mean: ",mean," std: ",std)
 
     return mean, std
+'''
 
 
 
+def check_accuracy(loader, model, metric):
 
-# emnist dataset 
-#train_loader, valid_loader = get_train_valid_loader(data_dir = './data', batch_size = 64, augment = False, random_seed = 1)
-
-#test_loader = get_test_loader(data_dir = './data', batch_size = 64)
-#evaluate_mean_std()
-
-def check_accuracy(loader, model):
-    num_correct = 0 
-    num_samples = 0 
-    model.eval()
+    metric.reset()
 
     with torch.no_grad(): 
-        for x, y in loader: 
-            x = x.to(device = device)
-            y = y.to(device = device)
+        for img, labels in loader: 
+            img = img.to(device = device)
+            labels = labels.to(device = device)
             #x = x.reshape(x.shape[0], -1)
 
-            scores = model(x)
-            _, predictions = scores.max(1)
-            num_correct += (predictions == y).sum()
-            num_samples += predictions.size(0)
+            outputs = model(img)
+            update_metric(metric, outputs, labels)
 
-        print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples)*100:.2f}')
-        return round((float(num_correct) / float(num_samples))*100, 2) 
+
+
+
 
 #Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -187,28 +199,25 @@ model = My_CNN(imageDim,62).to(device)
 # Loss and optimiser 
 params = model.parameters()
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(params=params, lr=lrng_rate, momentum = 0.9, weight_decay=wd)
-#print(optimizer.param_groups)
-#optimizer = optim.Adam(params=model.parameters(), lr=lrng_rate)
+optimizer = optim.SGD(params=params, lr=args.lr, momentum = args.m, weight_decay=args.wd)
+
 
 #Train network
 print('Training the Deep Learning network ...')
-#total_batch = len(mnist_train) // batch_size
-#print('Size of the training dataset is {}'.format(mnist_train.data.size()))
-#print('Size of the testing dataset'.format(mnist_test.data.size()))
-#print('Batch size is : {}'.format(batch_size))
-#print('Total number of batches is : {0:2.0f}'.format(total_batch))
-#print('\nTotal number of epochs is : {0:2.0f}'.format(training_epochs))
+
 counter_epoch = 0
-for epoch in range(training_epochs):
+for epoch in range(args.num_epochs):
     counter_epoch += 1
+
     print("Epoch n. ", counter_epoch)
     if (counter_epoch % 5) == 0:
         for g in optimizer.param_groups:
             print("Changing the learning rate from ", g['lr'])
             g['lr'] = g['lr'] * 0.1
             print("to ", g['lr'])
+
     model.train()
+
     for i, (data, targets) in enumerate(train_loader):
         #loading bar 
         n = len(train_loader)
@@ -223,10 +232,6 @@ for epoch in range(training_epochs):
 
         # forward 
         outputs = model(data)
-        #print(np.shape(targets))
-        #print(np.shape(outputs))
-        #print(targets)
-        #print(outputs)
 
         loss = criterion(outputs, targets)
 
@@ -238,12 +243,26 @@ for epoch in range(training_epochs):
         optimizer.step()
         
     # Validation
-    #acc_tl = check_accuracy(train_loader, model)
-    #acc_vl = check_accuracy(valid_loader, model)
+
     print("\n")
     model.eval()
-    wandb.log({"acc_train": check_accuracy(train_loader, model), "acc_valid": check_accuracy(valid_loader, model), "loss": loss.item()})
-    wandb.log({"acc_test": check_accuracy(test_loader, model)})
+    
+    check_accuracy(valid_loader, model, metrics["eval_train"])
+    results = metrics['eval_train'].get_results()
+    for k, v in results.items():
+        if k != 'Class Acc': 
+            name = k + '_validation'
+            wandb.log({name: v})
+    print(metrics['eval_train'])
+
+check_accuracy(test_loader, model, metrics["test"])
+results = metrics['test'].get_results()
+for k, v in results.items():
+    if k != 'Class Acc': 
+        name = k + '_test'
+        wandb.log({name: v})
+print(metrics['test'])
+
 
 print('Learning Finished!')
 wandb.finish()
