@@ -15,6 +15,14 @@ import wandb
 
 imageDim = 28*28
 
+def set_seed(random_seed):
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+    torch.cuda.manual_seed_all(random_seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
 def set_metrics():
     num_classes = 62
     
@@ -50,7 +58,7 @@ wandb.init(
     "criterion": "nn.CrossEntropyLoss()",
     "p": p,
     #"lr modifier": "Multiplied by 0.1 every 5 iterations",
-    "seed": 42,
+    "seed": args.seed,
     "weight decay": args.wd
     }
 )
@@ -75,10 +83,6 @@ def get_train_valid_loader(data_dir,
     )
 
     # define transforms
-    valid_transform = transforms.Compose([
-            transforms.ToTensor(), 
-            normalize
-    ])
     
     train_transform = transforms.Compose([
             transforms.ToTensor(),
@@ -86,19 +90,27 @@ def get_train_valid_loader(data_dir,
         ])
 
     # load the dataset
-    train_dataset = datasets.EMNIST(
+    train_set = datasets.EMNIST(
         root=data_dir, train=True,split = 'byclass',
         download=True, transform=train_transform,
     )
 
-    valid_dataset = datasets.EMNIST(
-        root=data_dir, train=True, split = 'byclass',
-        download=True, transform=valid_transform,
-    )
+    entire_trainset = torch.utils.data.DataLoader(train_set, shuffle=True)
+
+    split_train_size = int((1-valid_size)*(len(entire_trainset))) 
+    split_valid_size = len(entire_trainset) - split_train_size 
+
+    train_set, val_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size]) 
+
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.bs, shuffle=True)
+    valid_loader = torch.utils.data.DataLoader(val_set, batch_size=1, shuffle=True)
     
+    '''
     num_train = len(train_dataset)
+    print(num_train)
     indices = list(range(num_train))
     split = int(np.floor(valid_size * num_train))
+    print(split)
 
     if shuffle:
         np.random.seed(random_seed)
@@ -108,12 +120,23 @@ def get_train_valid_loader(data_dir,
     train_sampler = SubsetRandomSampler(train_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)
 
+    
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, sampler=train_sampler)
  
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset, batch_size=batch_size, sampler=valid_sampler)
 
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset[indices[split:]], batch_size=batch_size)
+  
+    valid_loader = torch.utils.data.DataLoader(
+        valid_dataset[indices[:split]], batch_size=batch_size)
+    '''
+
+    print(type(train_loader))
+    print(len(train_loader))
+    print(len(valid_loader))
     return (train_loader, valid_loader)
 
 
@@ -138,7 +161,7 @@ def get_test_loader(data_dir,
     )
 
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle
+        dataset, batch_size=1, shuffle=shuffle
     )
 
     return data_loader
@@ -188,11 +211,11 @@ def check_accuracy(loader, model, metric):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-torch.manual_seed(42)
+set_seed(args.seed)
 
-train_loader, valid_loader = get_train_valid_loader(data_dir = './data', batch_size = 64, augment = False, random_seed = 1)
+train_loader, valid_loader = get_train_valid_loader(data_dir = './data', batch_size = args.bs, augment = False, random_seed = 1)
 
-test_loader = get_test_loader(data_dir = './data', batch_size = 64)
+test_loader = get_test_loader(data_dir = './data', batch_size = args.bs)
 
 model = My_CNN(imageDim,62).to(device)
 
