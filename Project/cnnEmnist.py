@@ -156,6 +156,7 @@ def main():
         "dataset": "EMNIST",
         "epochs": args.num_epochs,
         "momentum": args.m, 
+        "batch_size": args.bs,
         "Optimiser": "SGD",
         "criterion": "nn.CrossEntropyLoss()",
         "p": p,
@@ -227,7 +228,7 @@ def main():
         for k, v in results.items():
             if k != 'Class Acc': 
                 name = k + '_validation'
-                wandb.log({name: v})
+                wandb.log({name: v, "n_epoch": counter_epoch})
         print(metrics['eval_train'])
 
     check_accuracy(test_loader, model, metrics["test"])

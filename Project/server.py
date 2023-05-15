@@ -182,16 +182,16 @@ class Server:
                 self.model.eval()
                 for c in self.validation_clients:
                     c.change_model(self.model, dcopy=False)
-                self.eval_train()
+                self.eval_train(r)
 
             if (r+1) % self.args.test_interval == 0:
                 #Test on Test dataset every test_interval number of rounds
                 self.model.eval()
                 for c in self.test_clients:
                     c.change_model(self.model, dcopy=False)
-                self.test()
+                self.test(r)
 
-    def eval_train(self):
+    def eval_train(self, n_round):
         """
         This method handles the evaluation on the validation clients
         """
@@ -212,11 +212,11 @@ class Server:
         for k, v in results.items(): 
             if k != 'Class Acc': 
                 name = k + '_train'
-                wandb.log({name: v})
+                wandb.log({name: v, "n_round": n_round})
         print(self.metrics['eval_train'])
 
 
-    def test(self):
+    def test(self, n_round):
         """
             This method handles the test on the test clients
         """
@@ -238,5 +238,5 @@ class Server:
         for k, v in results.items():
             if k != 'Class Acc': 
                 name = k + '_test'
-                wandb.log({name: v})
+                wandb.log({name: v, "n_round": n_round})
         print(self.metrics['test'])
