@@ -1,6 +1,5 @@
 import os
 import json
-from collections import defaultdict
 import wandb
 import sys
 
@@ -43,6 +42,9 @@ def get_dataset_num_classes(dataset):
         return 62
     raise NotImplementedError
 
+def get_dataset_image_dimension(): 
+    return 28*28
+
 
 def model_init(args):
     if args.model == 'deeplabv3_mobilenetv2':
@@ -53,7 +55,7 @@ def model_init(args):
         model.fc = nn.Linear(in_features=512, out_features=get_dataset_num_classes(args.dataset))
         return model
     if args.model == 'cnn':
-        return My_CNN(28*28,62)
+        return My_CNN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset))
     raise NotImplementedError
 
 
@@ -74,7 +76,8 @@ def get_transforms(args):
         mean=0.1736,
         std=0.3248,
         )
-        #RICORDATI DI CAMBIARE IL CODICE PERCHè NON SI PUO' FARE DATA AUG SUL VALIDATION 
+        #TODO: RICORDATI DI CAMBIARE IL CODICE PERCHè NON SI PUO' FARE DATA AUG SUL VALIDATION 
+        #DA FINIRE PARTE DI DATA AUG 
         angles = [0, 15, 30, 45, 60, 75]
         out_angle = angles.pop( np.random.randint(len(angles)) )
 
@@ -83,37 +86,15 @@ def get_transforms(args):
             transforms.ToTensor(),
             #transforms.rotate(np.random.choice(angles) if args.rotateFemnist else 0),
             normalize,
-            #nptr.Normalize((0.5,), (0.5,))
         ])
         test_transforms = nptr.Compose([
             transforms.ToPILImage(),
             transforms.ToTensor(),
             normalize,
-            #nptr.Normalize((0.5,), (0.5,))
         ])
     else:
         raise NotImplementedError
     return train_transforms, test_transforms
-
-
-def read_femnist_dir(data_dir):
-    data = defaultdict(lambda: {})
-    files = os.listdir(data_dir)
-    files = [f for f in files if f.endswith('.json')]
-    #files = np.random.choice(files, size = len(files)//4)
-    i = 1
-    for f in files:
-        sys.stdout.write('\r')
-        sys.stdout.write("%d / %d" % (i, len(files)))
-        sys.stdout.flush()
-        file_path = os.path.join(data_dir, f)
-        
-        with open(file_path, 'r') as inf:
-            cdata = json.load(inf)
-        data.update(cdata['user_data'])
-        i += 1
-    return data
-
 
 def my_read_femnist_dir(data_dir, transform, is_test_mode):
     data = []
@@ -122,6 +103,7 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     if is_test_mode: files = np.random.choice(files, size = len(files)//6) 
     i = 1
     for f in files:
+        #Loading bar
         sys.stdout.write('\r')
         sys.stdout.write("%d / %d" % (i, len(files)))
         sys.stdout.flush()
@@ -134,10 +116,6 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
         i += 1
     
     return data
-
-
-def read_femnist_data(train_data_dir, test_data_dir):
-    return read_femnist_dir(train_data_dir), read_femnist_dir(test_data_dir)
 
 def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
     return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), my_read_femnist_dir(test_data_dir, test_transform, is_test_mode)
@@ -169,15 +147,7 @@ def get_datasets(args):
         niid = args.niid
         train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
         test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
-        #train_data, test_data = read_femnist_data(train_data_dir, test_data_dir)
         train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, train_transforms, test_transforms, args.test_mode)
-
-        #train_datasets, test_datasets = [], []
-
-        #for user, data in train_data.items():
-        #    train_datasets.append(Femnist(data, train_transforms, user))
-        #for user, data in test_data.items():
-        #    test_datasets.append(Femnist(data, test_transforms, user))
 
     else:
         raise NotImplementedError
@@ -212,7 +182,6 @@ def gen_clients(args, train_datasets, test_datasets, model, device):
 
 
 def main():
-        # start a new wandb run to track this script
     parser = get_parser()
     args = parser.parse_args()
     set_seed(args.seed)
@@ -225,13 +194,11 @@ def main():
         project="Femnist part 1",
         
         # track hyperparameters and run metadata
-        
         config={
         "learning_rate": args.lr,
         "batch size": args.bs,
         "weight decay": args.wd,
-        "momentum": args.m,
-        #"clipping gradient": args.clip, 
+        "momentum": args.m, 
         "seed": args.seed,
         "isNiid": args.niid,
         "model": args.model,
@@ -244,7 +211,7 @@ def main():
         "dataset": "FeMnist",
         "Optimiser": "SGD",
         "criterion": "CrossEntropyLoss",
-        "p": 0.5,
+        "p": 0.25,
         }
     )
 
@@ -263,7 +230,6 @@ def main():
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
-    #print("somma img train = ", sum([len(x) for x in train_datasets]))
 
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train(args)

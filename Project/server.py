@@ -1,5 +1,4 @@
 import copy
-from collections import OrderedDict
 
 import wandb
 
@@ -23,21 +22,12 @@ class Server:
         self.metrics = metrics
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
-        '''
-        print("train: \n", self.count_labels(self.train_clients))
-        input()
-        print("val: \n", self.count_labels(self.validation_clients))
-        input()        
-        print("test: \n", self.count_labels(self.test_clients))
-        input()'''
-
     def count_labels(self, clients): 
         res = list()
         for element in clients: 
             res += [element.dataset.samples[i][1] for i in range(len(element.dataset.samples))]
         
         return pd.Series(res).value_counts().to_string()
-
 
     def split_train_val(self, train_clients): 
         random.shuffle(train_clients)
@@ -52,9 +42,9 @@ class Server:
         num_tot_clients = len(self.train_clients)
         high_prob = int(0.1 * num_tot_clients)
         low_prob = int(0.3 * num_tot_clients)
-        other_prob = num_tot_clients - high_prob - low_prob
 
         picked_users = []
+
         while len(picked_users) < self.args.clients_per_round:
             rand_num = np.random.random()
             user = None
@@ -63,21 +53,24 @@ class Server:
                 if rand_num <= 0.5:
                     # prendi high probability
                     user = np.random.choice(self.train_clients[ : high_prob])
+
                 elif 0.5 < rand_num < 0.999:
                     # prendi mid probability
                     user = np.random.choice(self.train_clients[high_prob : num_tot_clients-low_prob])
+                
                 else:
                     # prendi low probability
                     user = np.random.choice(self.train_clients[num_tot_clients-low_prob : ])
 
                 if user.name in [x.name for x in picked_users]:
-                    user = None
+                    user = None #Per ripetere iterazione nel caso in cui dovessi selezionare due volte lo stesso client
 
             picked_users.append(user)
 
         return picked_users
 
     def power_of_choice_selection(self):
+        # TODO: DA CAMBIARE per problema d e m 
         # Create dataset-size probabilities
         client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
         total_samples = np.sum(client_dataset_sizes)
@@ -110,6 +103,7 @@ class Server:
         """
         updates = []
         n = len(clients)
+
         for i, c in enumerate(clients):
             # loading bar
             sys.stdout.write('\r')
@@ -117,18 +111,10 @@ class Server:
             sys.stdout.write("Round %d: [%-20s] %d%%" % (n_round+1, '=' * int(20 * j), 100 * j))
             sys.stdout.flush()
 
-            #print("ANDIAMO SIAMO IN ", len(clients))
-            #print('\n')
-            #print('client n. ', i)
-            #print(list(c.model.state_dict().items())[0])
             n_samples, model_parameters = c.train(args)
-            #print(list(c.model.state_dict().items())[0])
-            #input("press enter.")
 
-            #print(n_samples, " ANDIAMO AL PROSSIMO CLIENT")
             updates.append( (n_samples, model_parameters) )
-        #gc.collect()
-        #torch.cuda.empty_cache()
+
         return updates
 
     def aggregate(self, updates):
@@ -139,7 +125,6 @@ class Server:
         """
 
         ### INITIALIZE NEW (ZERO) STATE DICTIONARY
-        #print("I'm aggregating!")
         model_sd = self.model.state_dict()
         new_sd = {}
         total_count = 0
@@ -167,8 +152,6 @@ class Server:
         for r in range(self.args.num_rounds):
 
             # Choose clients
-            # client_index = self.select_clients()
-            # clients = [self.train_clients[i] for i in client_index]
 
             if self.args.client_selection == 'random': 
                 clients = self.select_clients()
@@ -180,16 +163,13 @@ class Server:
             self.model.train()
             # Update parameters
             for c in clients:
-                c.change_model(self.model)
+                c.change_model(self.model) #with deepcopy
 
             updates = self.train_round(clients, r, args)
             new_parameters = self.aggregate(updates)
             sys.stdout.write("\n")
 
-            #print(list(self.model.state_dict().items())[0])
             self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
-            #print(list(self.model.state_dict().items())[0])
-            #input("press enter.")
 
             if (r+1) % self.args.gc == 0:
                 print("Doing Gargage Collector in GPU")
@@ -198,26 +178,24 @@ class Server:
                 print("Done!")
 
             if (r+1) % self.args.eval_interval == 0:
+                #Test on Validation dataset every eval_interval number of rounds
                 self.model.eval()
-                for c in self.train_clients:
+                for c in self.validation_clients:
                     c.change_model(self.model, dcopy=False)
                 self.eval_train()
-                #input("press enter.")
 
             if (r+1) % self.args.test_interval == 0:
+                #Test on Test dataset every test_interval number of rounds
                 self.model.eval()
                 for c in self.test_clients:
                     c.change_model(self.model, dcopy=False)
                 self.test()
-                #input("press enter.")
 
     def eval_train(self):
         """
-        This method handles the evaluation on the train clients
+        This method handles the evaluation on the validation clients
         """
-
         self.metrics['eval_train'].reset()
-
 
         n = len(self.validation_clients)
         for i,c in enumerate(self.validation_clients):
@@ -229,6 +207,7 @@ class Server:
 
             c.test(self.metrics['eval_train'])
 
+        #To load results obtained on wandb
         results = self.metrics['eval_train'].get_results()
         for k, v in results.items(): 
             if k != 'Class Acc': 
@@ -253,7 +232,8 @@ class Server:
             ###
 
             c.test(self.metrics['test'])
-
+        
+        #To load results obtained on wandb
         results = self.metrics['test'].get_results()
         for k, v in results.items():
             if k != 'Class Acc': 
