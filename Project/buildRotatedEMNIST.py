@@ -145,8 +145,8 @@ def visualize(file):
 
 if __name__ == "__main__":
     buildRotatedFEMNIST()
-    # visualize(15)
-    # visualize(30)
-    # visualize(45)
-    # visualize(60)
-    # visualize(75)
+    visualize(15)
+    visualize(30)
+    visualize(45)
+    visualize(60)
+    visualize(75)
