@@ -195,7 +195,7 @@ def main():
 
         # set the wandb project where this run will be logged
         project="Femnist part 1",
-        
+        name=f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}",
         # track hyperparameters and run metadata
         config={
         "learning_rate": args.lr,

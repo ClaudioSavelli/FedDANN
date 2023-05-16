@@ -118,4 +118,3 @@ def buildRotatedFEMNIST():
 
 if __name__ == "__main__":
     buildRotatedFEMNIST()
-    
