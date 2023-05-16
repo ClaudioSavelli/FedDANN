@@ -191,7 +191,7 @@ def main():
         mode=mode_selected,
 
         # set the wandb project where this run will be logged
-        project="Femnist part 1",
+        project="RealFemnist part 1",
         
         # track hyperparameters and run metadata
         config={

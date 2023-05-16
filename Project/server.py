@@ -202,7 +202,7 @@ class Server:
             # loading bar
             sys.stdout.write('\r')
             j = (i + 1) / n
-            sys.stdout.write("Evaluating train clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
+            sys.stdout.write("Evaluating validation clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
             sys.stdout.flush()
 
             c.test(self.metrics['eval_train'])
