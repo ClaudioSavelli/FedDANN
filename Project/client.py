@@ -2,7 +2,6 @@ import copy
 import torch
 
 from torch import optim, nn
-from collections import defaultdict
 from torch.utils.data import DataLoader
 import copy
 
@@ -16,12 +15,11 @@ class Client:
         self.dataset = dataset
         self.name = self.dataset.client_name
         self.model = model
-        #self.model = copy.deepcopy(model)
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
-        self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False) # P
+        self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=255) # Da chiedere perchè abbiamo eliminato reduction='none'
+        self.criterion = nn.CrossEntropyLoss(ignore_index=255)
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
         self.device = device
@@ -56,7 +54,6 @@ class Client:
             images = images.to(self.device)
             labels = labels.to(self.device)
         
-
             # forward
             outputs = self.model(images)
 
@@ -64,9 +61,9 @@ class Client:
 
             # backward
             optimizer.zero_grad()
-            #loss, hidden = self.model(images, hidden, labels)
             loss.backward()
 
+            #Clip norm
             #torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
 
             # gradient descent or adam step
@@ -80,8 +77,6 @@ class Client:
         (by calling the run_epoch method for each local epoch of training)
         :return: length of the local dataset, copy of the model parameters
         """
-
-        #params = self.add_weight_decay(self.model, args.wd)
         params = self.model.parameters()
         optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m, weight_decay=args.wd)
 
@@ -99,27 +94,21 @@ class Client:
         This method tests the model on the local dataset of the client.
         :param metric: StreamMetric object
         """
-
-
         with torch.no_grad():
             for i, (img, labels) in enumerate(self.test_loader):
                 img = img.to(device=self.device)
                 labels = labels.to(device=self.device)
                 outputs = self._get_outputs(img)
-                #print(labels)
-                #print(outputs)
-                #input()
                 self.update_metric(metric, outputs, labels)
 
     def change_model(self, model, dcopy=True):
-        #self.model.load_state_dict( model.state_dict() )
-        self.model = copy.deepcopy(model) if dcopy else model #deepcopy?
+        #To deepcopy the model for doing the local training phase
+        self.model = copy.deepcopy(model) if dcopy else model
 
     def get_local_loss(self):
-
         local_loss = 0
         for cur_step, (images, labels) in enumerate(self.train_loader):
-            # Get data to cuda if possible
+
             images = images.to(self.device)
             labels = labels.to(self.device)
 
