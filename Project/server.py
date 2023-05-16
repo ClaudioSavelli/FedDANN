@@ -70,19 +70,20 @@ class Server:
         return picked_users
 
     def power_of_choice_selection(self):
-        # TODO: DA CAMBIARE per problema d e m 
+        if self.args.d < self.args.clients_per_round:
+            raise Exception("Power of choice: m < d < K not respected")
+
         # Create dataset-size probabilities
         client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
         total_samples = np.sum(client_dataset_sizes)
         client_probabilities = client_dataset_sizes / total_samples
 
         # Get first d clients
-        # size = d*self.args.clients_per_round ?????
         A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
-        
-        self.model.train()
+
 
         # Update models
+        self.model.train()
         for c in A_client_set:
             c.change_model(self.model, dcopy=False)
 
@@ -90,7 +91,7 @@ class Server:
         A_client_set_losses = np.array([c.get_local_loss() for c in A_client_set])
 
         # Choose highest loss clients
-        active_clients_index = np.argsort(-A_client_set_losses)[ : min(self.args.d,self.args.clients_per_round)]
+        active_clients_index = np.argsort(-A_client_set_losses)[ : self.args.clients_per_round]
         active_clients = A_client_set[active_clients_index]
 
         return active_clients

@@ -57,7 +57,7 @@ class Client:
             # forward
             outputs = self.model(images)
 
-            loss = self.criterion(outputs, labels)
+            loss = self.criterion(outputs, labels) # + L2 +
 
             # backward
             optimizer.zero_grad()
