@@ -100,7 +100,9 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    if is_test_mode: files = np.random.choice(files, size = len(files)//6) 
+    # files = random.shuffle(files)
+    if is_test_mode: files = np.random.choice(files, size = len(files)//6)
+
     i = 1
     for f in files:
         #Loading bar
@@ -118,7 +120,8 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     return data
 
 def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
-    return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), my_read_femnist_dir(test_data_dir, test_transform, is_test_mode)
+    return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), \
+           my_read_femnist_dir(test_data_dir, test_transform, is_test_mode)
 
 
 def get_datasets(args):

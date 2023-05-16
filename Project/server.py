@@ -79,7 +79,6 @@ class Server:
         client_probabilities = client_dataset_sizes / total_samples
 
         # Get first d clients
-        # size = d*self.args.clients_per_round ?????
         A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
 
 
