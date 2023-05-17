@@ -79,9 +79,20 @@ def get_train_valid_loader(data_dir,
 
 def read_rotated_emnist_dir(is_test_mode):
         data_dir = os.path.join('data', 'RotatedFEMNIST')
+        
+        normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+    )
+
+        # define transforms
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            normalize
+        ])
 
         all_data = {}
-        C = []
+        all_data['x'] = []
         all_data['y'] = []
         files = os.listdir(data_dir)
         files = [f for f in files if f.endswith('.json')]
@@ -104,18 +115,24 @@ def read_rotated_emnist_dir(is_test_mode):
                     all_data['y'] += images["y"]
             i += 1
         
-        return Femnist(all_data, None, "Centralised User")
+        return Femnist(all_data, transform, "Centralised User")
 
-def split_train_test(entire_dataset, batch_size, valid_size = 0.8, shuffle = True):
-    split_train_size = int((1-valid_size)*(len(entire_dataset))) 
-    split_valid_size = len(entire_dataset) - split_train_size 
+def split_train_test(entire_dataset, batch_size, train_size = 0.8, shuffle = True):
+    split_train_size = int((1-train_size)*(len(entire_dataset))) 
+    split_test_size = len(entire_dataset) - split_train_size 
 
-    train_set, val_set = torch.utils.data.random_split(entire_dataset, [split_train_size, split_valid_size]) 
+    train_set, test_set = torch.utils.data.random_split(entire_dataset, [split_train_size, split_test_size])
+
+    split_train_size = int((1-train_size)*(len(train_set))) 
+    split_valid_size = len(train_set) - split_train_size 
+    train_set, valid_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size])
+
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    test_loader = torch.utils.data.DataLoader(val_set, batch_size=1, shuffle=shuffle)
+    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=1, shuffle=shuffle)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=shuffle)
 
-    return (train_loader, test_loader)
+    return (train_loader, validation_loader, test_loader)
 
 
 def check_accuracy(loader, model, metric):
@@ -165,10 +182,10 @@ def main():
     set_seed(args.seed)
 
     dataset = read_rotated_emnist_dir(args.test_mode)
-    print("\n",len(dataset))
-    input()
 
-    train_loader, test_loader = split_train_test(dataset, args.bs)
+    train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs)
+    print(len(validation_loader))
+    input()
 
     model = My_CNN(imageDim,62).to(device)
 
@@ -219,7 +236,7 @@ def main():
         # Validation
         model.eval()
         
-        check_accuracy(train_loader, model, metrics["eval_train"])
+        check_accuracy(validation_loader, model, metrics["eval_train"])
 
         #To put data on wandb
         results = metrics['eval_train'].get_results()

@@ -230,6 +230,7 @@ def main():
     print('Generate datasets...')
     train_datasets, test_datasets = get_datasets(args)
     print('\nDone.')
+    #Per data aug fare in modo che ci sia un train_dataset e un test_dataset come lo voglio io 
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)

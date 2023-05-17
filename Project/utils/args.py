@@ -6,6 +6,7 @@ def get_parser():
     parser.add_argument('--seed', type=int, default=42, help='random seed')
     parser.add_argument('--dataset', type=str, default = 'femnist', choices=['idda', 'femnist'], required=False, help='dataset name')
     parser.add_argument('--client_selection', type=str, default = 'random', choices=['random', 'biased', 'pow'], required=False, help='client selection')
+    parser.add_argument('--dataset_selection', type=str, default = 'default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
     parser.add_argument('--niid', action='store_true', default=False,
                         help='Run the experiment with the non-IID partition (IID by default). Only on FEMNIST dataset.')
     parser.add_argument('--test_mode', action='store_true', default=False,
@@ -22,7 +23,7 @@ def get_parser():
     parser.add_argument('--d', type=int, default=20, help='pow_d')
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
     parser.add_argument('--tf', type=float, default=0.8, help='train_fraction')
-    parser.add_argument('--gc', type=int, default=500, help='after how many rounds call the garbage collector for cleaning GPU')
+    parser.add_argument('--gc', type=int, default=550, help='after how many rounds call the garbage collector for cleaning GPU')
     parser.add_argument('--change_lr_interval', type=int, default=1000, help='after how many epoches multiply the lr by 0.1')
     parser.add_argument('--print_train_interval', type=int, default=50, help='client print train interval')
     parser.add_argument('--print_test_interval', type=int, default=1000, help='client print test interval')
