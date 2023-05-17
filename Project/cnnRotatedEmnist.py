@@ -170,6 +170,7 @@ def main():
         "epochs": args.num_epochs,
         "momentum": args.m, 
         "batch_size": args.bs,
+        "train_fraction": args.tf,
         "Optimiser": "SGD",
         "criterion": "nn.CrossEntropyLoss()",
         "p": p,
@@ -183,9 +184,7 @@ def main():
 
     dataset = read_rotated_emnist_dir(args.test_mode)
 
-    train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs)
-    print(len(validation_loader))
-    input()
+    train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs, train_size=args.tf)
 
     model = My_CNN(imageDim,62).to(device)
 

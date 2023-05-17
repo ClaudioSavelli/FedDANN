@@ -236,13 +236,23 @@ def main():
     args = parser.parse_args()
     set_seed(args.seed)
 
+    if args.dataset_selection == 'default': 
+        project = "RealFemnist part 1"
+        name = f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    elif args.dataset_selection == 'rotated': 
+        project = "RealRotatedFemnist" 
+        name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    elif args.dataset_selection == 'L1O': 
+        project = "RealRotatedFemnist" 
+        name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
         mode=mode_selected,
 
         # set the wandb project where this run will be logged
-        project="RealFemnist part 1",
-        name=f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}",
+        project=project,
+        name=name,
         # track hyperparameters and run metadata
         config={
         "learning_rate": args.lr,
