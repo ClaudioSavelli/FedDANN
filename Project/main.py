@@ -196,9 +196,13 @@ def get_datasets_rotated(args):
             test_datasets = all_data[int(len(all_data)*0.8):]
             
         elif args.dataset_selection == 'L1O':
-            #TODO
-            pass
-
+            test_datasets = full_datasets_lists[args.leftout]
+            for i, domain in enumerate(full_datasets_lists):
+                if i == args.leftout:
+                    continue
+                train_datasets.extend(domain)
+            random.shuffle(train_datasets)
+                
     else:
         raise NotImplementedError
 
