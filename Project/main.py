@@ -76,15 +76,10 @@ def get_transforms(args):
         mean=0.1736,
         std=0.3248,
         )
-        #TODO: RICORDATI DI CAMBIARE IL CODICE PERCHè NON SI PUO' FARE DATA AUG SUL VALIDATION 
-        #DA FINIRE PARTE DI DATA AUG 
-        angles = [0, 15, 30, 45, 60, 75]
-        out_angle = angles.pop( np.random.randint(len(angles)) )
-
+        
         train_transforms = nptr.Compose([
             transforms.ToPILImage(),
             transforms.ToTensor(),
-            #transforms.rotate(np.random.choice(angles) if args.rotateFemnist else 0),
             normalize,
         ])
         test_transforms = nptr.Compose([
@@ -115,6 +110,31 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
             cdata = json.load(inf)
             for user, images in cdata['user_data'].items():    
                 data.append(Femnist(images, transform, user))
+        i += 1
+    
+    return data
+
+
+def my_read_femnist_dir_rotated(data_dir, transform):
+    data = []
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+
+    i = 1
+    for f in files:
+        #Loading bar
+        sys.stdout.write('\r')
+        sys.stdout.write("%d / %d" % (i, len(files)))
+        sys.stdout.flush()
+        file_path = os.path.join(data_dir, f)
+        
+        num_file = 0
+        with open(file_path, 'r') as inf:
+            cdata = json.load(inf)
+            data[num_file] = []
+            for user, images in cdata['user_data'].items():    
+                data[num_file].append(Femnist(images, transform, user))
+            num_file += 1
         i += 1
     
     return data
@@ -151,6 +171,33 @@ def get_datasets(args):
         train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
         test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
         train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, train_transforms, test_transforms, args.test_mode)
+
+    else:
+        raise NotImplementedError
+
+    return train_datasets, test_datasets
+
+
+def get_datasets_rotated(args):
+
+    train_datasets = []
+    train_transforms, test_transforms = get_transforms(args)
+
+    if args.dataset == 'femnist':
+        full_data_dir = os.path.join('data', 'RotatedFEMNIST')
+        full_datasets_lists = my_read_femnist_dir_rotated(full_data_dir, train_transforms)
+        if args.dataset_selection == 'rotated':
+            all_data = []
+            for domain in full_datasets_lists:
+                all_data.extend(domain)
+            
+            random.shuffle(all_data)
+            train_datasets = all_data[:int(len(all_data)*0.8)]
+            test_datasets = all_data[int(len(all_data)*0.8):]
+            
+        elif args.dataset_selection == 'L1O':
+            #TODO
+            pass
 
     else:
         raise NotImplementedError
@@ -228,7 +275,15 @@ def main():
     print('Done.')
 
     print('Generate datasets...')
-    train_datasets, test_datasets = get_datasets(args)
+    if args.dataset_selection == 'default':
+        train_datasets, test_datasets = get_datasets(args)
+    elif args.dataset_selection == 'rotated':
+        train_datasets, test_datasets = get_datasets(args)
+    elif args.dataset_selection == 'L1O':
+        train_datasets, test_datasets = get_datasets(args)
+    else:
+        raise Exception("Wrong dataset selection.")
+        
     print('\nDone.')
     #Per data aug fare in modo che ci sia un train_dataset e un test_dataset come lo voglio io 
 
