@@ -69,7 +69,7 @@ def get_train_valid_loader(data_dir,
     train_set, val_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size]) 
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    valid_loader = torch.utils.data.DataLoader(val_set, batch_size=1, shuffle=shuffle)
+    valid_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=shuffle)
 
     return (train_loader, valid_loader)
 
@@ -95,7 +95,7 @@ def get_test_loader(data_dir,
     )
 
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=1, shuffle=shuffle
+        dataset, batch_size=batch_size, shuffle=shuffle
     )
 
     return data_loader

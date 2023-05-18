@@ -17,7 +17,7 @@ class Client:
         self.model = model
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
-        self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        self.test_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=False)
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=255)
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()

@@ -21,8 +21,12 @@ class StreamClsMetrics(Metrics):
         super().__init__(n_classes=n_classes, name=name)
 
     def update(self, label, prediction):
-        self.confusion_matrix[label[0]][prediction[0]] += 1
-        self.total_samples += 1
+        if (len(label) != len(prediction)): 
+            raise RuntimeError
+        for i in range(len(label)): 
+            self.confusion_matrix[label[i]][prediction[i]] += 1
+        
+        self.total_samples += len(label)
 
     def get_results(self):
         eps = 1e-6

@@ -73,7 +73,7 @@ def get_train_valid_loader(data_dir,
     train_set, val_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size]) 
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    valid_loader = torch.utils.data.DataLoader(val_set, batch_size=1, shuffle=shuffle)
+    valid_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=shuffle)
 
     return (train_loader, valid_loader)
 
@@ -127,8 +127,8 @@ def split_train_test(entire_dataset, batch_size, train_size = 0.8, shuffle = Tru
 
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=1, shuffle=shuffle)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=shuffle)
+    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=shuffle)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=shuffle)
 
     return (train_loader, validation_loader, test_loader)
 
@@ -190,8 +190,8 @@ def create_l1o_loader(train_dataset, test_dataset, batch_size, train_size = 0.8,
 
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=1, shuffle=shuffle)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=shuffle)
+    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=shuffle)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=shuffle)
 
     return (train_loader, validation_loader, test_loader)
 
