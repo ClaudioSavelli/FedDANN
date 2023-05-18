@@ -121,6 +121,7 @@ def my_read_femnist_dir_rotated(data_dir, transform):
     files = [f for f in files if f.endswith('.json')]
 
     i = 1
+    num_file = 0
     for f in files:
         #Loading bar
         sys.stdout.write('\r')
@@ -128,10 +129,9 @@ def my_read_femnist_dir_rotated(data_dir, transform):
         sys.stdout.flush()
         file_path = os.path.join(data_dir, f)
         
-        num_file = 0
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
-            data[num_file] = []
+            data.append([])
             for user, images in cdata['user_data'].items():    
                 data[num_file].append(Femnist(images, transform, user))
             num_file += 1
@@ -186,6 +186,7 @@ def get_datasets_rotated(args):
     if args.dataset == 'femnist':
         full_data_dir = os.path.join('data', 'RotatedFEMNIST')
         full_datasets_lists = my_read_femnist_dir_rotated(full_data_dir, train_transforms)
+
         if args.dataset_selection == 'rotated':
             all_data = []
             for domain in full_datasets_lists:
@@ -198,14 +199,13 @@ def get_datasets_rotated(args):
         elif args.dataset_selection == 'L1O':
             test_datasets = full_datasets_lists[args.leftout]
             for i, domain in enumerate(full_datasets_lists):
-                if i == args.leftout:
-                    continue
-                train_datasets.extend(domain)
+                if i != args.leftout:
+                    train_datasets.extend(domain)
             random.shuffle(train_datasets)
                 
     else:
         raise NotImplementedError
-
+    
     return train_datasets, test_datasets
 
 
