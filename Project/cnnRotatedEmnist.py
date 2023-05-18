@@ -77,7 +77,7 @@ def get_train_valid_loader(data_dir,
 
     return (train_loader, valid_loader)
 
-def read_rotated_emnist_dir(is_test_mode):
+def read_rotated_emnist_dir():
         data_dir = os.path.join('data', 'RotatedFEMNIST')
         
         normalize = transforms.Normalize(
@@ -96,8 +96,6 @@ def read_rotated_emnist_dir(is_test_mode):
         all_data['y'] = []
         files = os.listdir(data_dir)
         files = [f for f in files if f.endswith('.json')]
-        # files = random.shuffle(files)
-        #if is_test_mode: files = np.random.choice(files, size = len(files)//6)
 
         i = 1
         for f in files:
@@ -134,6 +132,69 @@ def split_train_test(entire_dataset, batch_size, train_size = 0.8, shuffle = Tru
 
     return (train_loader, validation_loader, test_loader)
 
+def read_l1o_emnist_dir(leftout):
+    data_dir = os.path.join('data', 'RotatedFEMNIST')
+        
+    normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+    )
+
+    # define transforms
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    train_data = {}
+    train_data['x'] = []
+    train_data['y'] = []
+    test_data = {}
+    test_data['x'] = []
+    test_data['y'] = []
+    
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+
+    i = 1
+    num_file = 0
+    for f in files:
+        #Loading bar
+        sys.stdout.write('\r')
+        sys.stdout.write("%d / %d" % (i, len(files)))
+        sys.stdout.flush()
+        file_path = os.path.join(data_dir, f)
+        
+        with open(file_path, 'r') as inf:
+            cdata = json.load(inf)
+            #t = 0 
+            for user, images in cdata['user_data'].items(): 
+                if(num_file != leftout):
+                    train_data['x'] += images["x"]
+                    train_data['y'] += images["y"]
+                else: 
+                    test_data['x'] += images["x"]
+                    test_data['y'] += images["y"]
+
+        i += 1
+        num_file += 1
+    
+    return Femnist(train_data, transform, "Centralised Train User"), \
+            Femnist(test_data, transform, "Centralised Test User")
+
+def create_l1o_loader(train_dataset, test_dataset, batch_size, train_size = 0.8, shuffle = True): 
+    split_train_size = int((train_size)*(len(train_dataset))) 
+    split_valid_size = len(train_dataset) - split_train_size 
+    train_set, valid_set = torch.utils.data.random_split(train_dataset, [split_train_size, split_valid_size])
+    test_set = test_dataset
+
+
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
+    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=1, shuffle=shuffle)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1, shuffle=shuffle)
+
+    return (train_loader, validation_loader, test_loader)
+
 
 def check_accuracy(loader, model, metric):
 
@@ -156,11 +217,17 @@ def main():
     p = 0.25
     mode_selected = "disabled" if args.test_mode else "online"
 
+    if args.dataset_selection == 'rotated': 
+        name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    elif args.dataset_selection == 'L1O': 
+        name = f"{args.dataset_selection}_leftout{args.leftout}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+
     wandb.init(
         mode=mode_selected,
 
         # set the wandb project where this run will be logged
         project="RotatedEmnistBenchmark",
+        name = name, 
         
         # track hyperparameters and run metadata
         config={
@@ -182,9 +249,14 @@ def main():
 
     set_seed(args.seed)
 
-    dataset = read_rotated_emnist_dir(args.test_mode)
+    if args.dataset_selection == 'rotated': 
+        dataset = read_rotated_emnist_dir()
 
-    train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs, train_size=args.tf)
+        train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs, train_size=args.tf)
+    
+    elif args.dataset_selection == 'L1O': 
+        train_dataset, test_dataset = read_l1o_emnist_dir(args.leftout)
+        train_loader, validation_loader, test_loader = create_l1o_loader(train_dataset, test_dataset, args.bs, train_size=args.tf)
 
     model = My_CNN(imageDim,62).to(device)
 
@@ -194,7 +266,7 @@ def main():
     optimizer = optim.SGD(params=params, lr=args.lr, momentum = args.m, weight_decay=args.wd)
 
     #Train network
-    print('Training the Deep Learning network ...')
+    print('\nTraining the Deep Learning network ...')
 
     counter_epoch = 0
     for epoch in range(args.num_epochs):
