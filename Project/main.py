@@ -248,7 +248,7 @@ def main():
         name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
     elif args.dataset_selection == 'L1O': 
         project = "RealRotatedFemnist" 
-        name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+        name = f"{args.dataset_selection}_leftout{args.leftout}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
     
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
@@ -292,9 +292,9 @@ def main():
     if args.dataset_selection == 'default':
         train_datasets, test_datasets = get_datasets(args)
     elif args.dataset_selection == 'rotated':
-        train_datasets, test_datasets = get_datasets(args)
+        train_datasets, test_datasets = get_datasets_rotated(args)
     elif args.dataset_selection == 'L1O':
-        train_datasets, test_datasets = get_datasets(args)
+        train_datasets, test_datasets = get_datasets_rotated(args)
     else:
         raise Exception("Wrong dataset selection.")
         

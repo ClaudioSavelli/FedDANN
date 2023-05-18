@@ -118,12 +118,12 @@ def read_rotated_emnist_dir(is_test_mode):
         return Femnist(all_data, transform, "Centralised User")
 
 def split_train_test(entire_dataset, batch_size, train_size = 0.8, shuffle = True):
-    split_train_size = int((1-train_size)*(len(entire_dataset))) 
+    split_train_size = int((train_size)*(len(entire_dataset))) 
     split_test_size = len(entire_dataset) - split_train_size 
 
     train_set, test_set = torch.utils.data.random_split(entire_dataset, [split_train_size, split_test_size])
 
-    split_train_size = int((1-train_size)*(len(train_set))) 
+    split_train_size = int((train_size)*(len(train_set))) 
     split_valid_size = len(train_set) - split_train_size 
     train_set, valid_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size])
 
