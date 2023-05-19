@@ -288,7 +288,7 @@ def main():
     model.to("cuda")
     print('Done.')
 
-    print('Generate datasets...')
+    print('Generate datasets... ', end="")
     if args.dataset_selection == 'default':
         train_datasets, test_datasets = get_datasets(args)
     elif args.dataset_selection == 'rotated':
@@ -298,13 +298,18 @@ def main():
     else:
         raise Exception("Wrong dataset selection.")
         
-    print('\nDone.')
-    #Per data aug fare in modo che ci sia un train_dataset e un test_dataset come lo voglio io 
+    print('Done.')
 
     metrics = set_metrics(args)
-    train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
 
+    print("Generating clients... ", end = "")
+    train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
+    print("Done.")
+
+    print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
+    print("Done.")
+
     server.train(args)
 
     wandb.finish()

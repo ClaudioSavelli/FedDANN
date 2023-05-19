@@ -38,10 +38,9 @@ class Server:
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
         return np.random.choice(self.train_clients, num_clients, replace=False)
 
-    def biased_client_selection(self):
+    def biased_client_selection(self, prob, split):
         num_tot_clients = len(self.train_clients)
-        high_prob = int(0.1 * num_tot_clients)
-        low_prob = int(0.3 * num_tot_clients)
+        client_split = int(split * num_tot_clients)
 
         picked_users = []
 
@@ -50,17 +49,12 @@ class Server:
             user = None
 
             while user == None:
-                if rand_num <= 0.5:
+                if rand_num <= prob:
                     # prendi high probability
-                    user = np.random.choice(self.train_clients[ : high_prob])
-
-                elif 0.5 < rand_num < 0.999:
-                    # prendi mid probability
-                    user = np.random.choice(self.train_clients[high_prob : num_tot_clients-low_prob])
-                
+                    user = np.random.choice(self.train_clients[ : client_split])
                 else:
                     # prendi low probability
-                    user = np.random.choice(self.train_clients[num_tot_clients-low_prob : ])
+                    user = np.random.choice(self.train_clients[client_split : ])
 
                 if user.name in [x.name for x in picked_users]:
                     user = None #Per ripetere iterazione nel caso in cui dovessi selezionare due volte lo stesso client
@@ -156,8 +150,12 @@ class Server:
 
             if self.args.client_selection == 'random': 
                 clients = self.select_clients()
-            elif self.args.client_selection == 'biased':
-                clients = self.biased_client_selection()
+            elif self.args.client_selection == 'biased1':
+                # 1 for 0.5 10% and 0.5 90% of the dataset
+                clients = self.biased_client_selection(0.5, 0.1)
+            elif self.args.client_selection == 'biased2':
+                # 2 for 0.0001 30% and 0.9999 70% of the dataset 
+                clients = self.biased_client_selection(0.0001, 0.3)
             elif self.args.client_selection == 'pow':
                 clients = self.power_of_choice_selection()
             
