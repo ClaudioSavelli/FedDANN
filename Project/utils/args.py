@@ -5,7 +5,7 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42, help='random seed')
     parser.add_argument('--dataset', type=str, default = 'femnist', choices=['idda', 'femnist'], required=False, help='dataset name')
-    parser.add_argument('--client_selection', type=str, default = 'random', choices=['random', 'biased', 'pow'], required=False, help='client selection')
+    parser.add_argument('--client_selection', type=str, default = 'random', choices=['random', 'biased1', 'biased2', 'pow'], required=False, help='client selection')
     parser.add_argument('--dataset_selection', type=str, default = 'default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
     parser.add_argument('--leftout', type=int, default=0, choices=[0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
     parser.add_argument('--niid', action='store_true', default=False,
