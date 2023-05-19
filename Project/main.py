@@ -240,15 +240,25 @@ def main():
     args = parser.parse_args()
     set_seed(args.seed)
 
-    if args.dataset_selection == 'default': 
-        project = "RealFemnist part 1"
-        name = f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
-    elif args.dataset_selection == 'rotated': 
-        project = "RealRotatedFemnist" 
-        name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
-    elif args.dataset_selection == 'L1O': 
-        project = "RealRotatedFemnist" 
-        name = f"{args.dataset_selection}_leftout{args.leftout}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    if args.client_selection == 'biased':
+        project = "SmartClientSelection"
+        name = f"{'niid' if args.niid else 'iid'}_{args.client_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    
+    elif args.client_selection == 'pow':
+        project = "SmartClientSelection"
+        name = f"{'niid' if args.niid else 'iid'}_{args.client_selection}_cr{args.clients_per_round}_d{args.d}_epochs{args.num_epochs}_lr{args.lr}"
+    else:
+        ## Data selection projects
+        if args.dataset_selection == 'default': 
+            project = "RealFemnist part 1"
+            name = f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+        elif args.dataset_selection == 'rotated': 
+            project = "RealRotatedFemnist" 
+            name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+        elif args.dataset_selection == 'L1O': 
+            project = "RealRotatedFemnist" 
+            name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+    
     
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
