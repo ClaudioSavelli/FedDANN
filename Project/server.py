@@ -2,6 +2,7 @@ import copy
 
 import wandb
 
+import torch.optim
 import random
 import numpy as np
 import torch
@@ -19,6 +20,7 @@ class Server:
         self.train_clients, self.validation_clients = self.split_train_val(train_clients)
         self.test_clients = test_clients
         self.model = model
+        self.optim = torch.optim.SGD(params=model.params, lr=1, momentum = args.server_momentum)#, weight_decay=args.wd)
         self.metrics = metrics
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
@@ -115,7 +117,7 @@ class Server:
 
         return updates
 
-    def aggregate(self, updates):
+    def aggregate_old(self, updates):
         """
         This method handles the FedAvg aggregation
         :param updates: updates received from the clients
@@ -139,6 +141,24 @@ class Server:
             new_sd[key] = new_sd[key]/total_count
 
         return new_sd
+
+    def aggregate(self, updates):
+
+        # updates = [(abs_weight, update), ...]
+        n = sum([u[0] for u in updates])
+        new_grad = torch.zeros_like( self.model.state_dict() )
+        for i,u in enumerate(updates):
+            new_grad += self.model.state_dict().sub( u[1] ).mul(u[0]/n)
+
+        return new_grad
+
+    def step(self, new_grad):
+
+        self.optim.zero_grad()
+        for i, p in enumerate(self.model.state_dict()):
+            if p.requires_grad:
+                p.grad = new_grad[i]
+        self.optim.step()
 
 
 
@@ -168,10 +188,13 @@ class Server:
                 c.change_model(self.model) #with deepcopy
 
             updates = self.train_round(clients, r, args)
-            new_parameters = self.aggregate(updates)
+
+            new_grad = self.aggregate(updates)
+            self.step(new_grad)
             sys.stdout.write("\n")
 
-            self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
+            #new_parameters = self.aggregate_old()
+            #self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
 
             if (r+1) % self.args.gc == 0:
                 print("Doing Gargage Collector in GPU")
