@@ -20,7 +20,7 @@ class Server:
         self.train_clients, self.validation_clients = self.split_train_val(train_clients)
         self.test_clients = test_clients
         self.model = model
-        self.optim = torch.optim.SGD(params=model.parameters(), lr=0.1, momentum = 0.9)#, weight_decay=args.wd)
+        self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = 0)#, weight_decay=args.wd)
         self.metrics = metrics
         #self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
