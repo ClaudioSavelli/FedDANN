@@ -55,7 +55,7 @@ def model_init(args):
         model.fc = nn.Linear(in_features=512, out_features=get_dataset_num_classes(args.dataset))
         return model
     if args.model == 'cnn':
-        return My_CNN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset), is_prob=args.prob)
+        return My_CNN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset))
     raise NotImplementedError
 
 

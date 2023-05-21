@@ -8,8 +8,8 @@ imageDim = 28*28
 
 # Create Fully Connected Network
 class My_CNN(torch.nn.Module): 
-    def __init__(self, input_size, num_classes, is_prob=False):
-        self.probabilistic = is_prob      # to be added to args
+    def __init__(self, input_size, num_classes):
+        self.probabilistic = False      # to be added to args
         super(My_CNN, self).__init__()
 
         # First 2D convolutional layer, taking in 1 input channel (image),
@@ -70,12 +70,12 @@ class My_CNN(torch.nn.Module):
             return self.net(x), (0.0, 0.0)
         else:
             z_params = self.net(x)
-            z_mu = z_params[:, :1024]
-            z_sigma = F.softplus(z_params[:, 1024:])
-            z_dist = distributions.Independent(distributions.normal.Normal(z_mu, z_sigma), 1)
-            z = z_dist.rsample([num_samples]).view([-1, 1024])
+            z_mu = z_params[:,:self.z_dim]
+            z_sigma = F.softplus(z_params[:,self.z_dim:])
+            z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
+            z = z_dist.rsample([num_samples]).view([-1,self.z_dim])
             
             if return_dist:
-                return z, (z_mu, z_sigma)
+                return z, (z_mu,z_sigma)
             else:
                 return z, (0.0, 0.0)

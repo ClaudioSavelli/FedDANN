@@ -3,7 +3,6 @@ import torch
 
 from torch import optim, nn
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
 import copy
 
 from utils.utils import HardNegativeMining, MeanReduction
@@ -24,10 +23,6 @@ class Client:
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
         self.device = device
-        
-        self.r_mu = nn.Parameter(torch.zeros(62, 1024))
-        self.r_sigma = nn.Parameter(torch.ones(62, 1024))
-        self.C = nn.Parameter(torch.ones([]))
 
     def __str__(self):
         return self.name
@@ -70,16 +65,6 @@ class Client:
             if self.args.l2r != 0.0: #0.01 works quite well (as starting point)
                 regL2R = z.norm(dim=1).mean()
                 loss = loss + self.args.l2r*regL2R
-            if self.args.cmi != 0.0:
-                r_sigma_softplus = F.softplus(self.r_sigma)
-                r_mu = self.r_mu[labels]
-                r_sigma = r_sigma_softplus[labels]
-                z_mu_scaled = z_mu*self.C
-                z_sigma_scaled = z_sigma*self.C
-                regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
-                        (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
-                regCMI = regCMI.sum(1).mean()
-                loss = loss + self.args.cmi*regCMI
             
             # backward
             optimizer.zero_grad()
