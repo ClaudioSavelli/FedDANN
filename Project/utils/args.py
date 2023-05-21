@@ -22,6 +22,7 @@ def get_parser():
     parser.add_argument('--wd', type=float, default=1e-4, help='weight decay')
     parser.add_argument('--m', type=float, default=0.9, help='momentum')
     parser.add_argument('--d', type=int, default=20, help='pow_d')
+    parser.add_argument('--l2r', type=float, default=0.0, help='l2')
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
     parser.add_argument('--tf', type=float, default=0.8, help='train_fraction')
     parser.add_argument('--gc', type=int, default=1001, help='after how many rounds call the garbage collector for cleaning GPU')
