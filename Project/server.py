@@ -77,13 +77,16 @@ class Server:
         client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
         total_samples = np.sum(client_dataset_sizes)
         client_probabilities = client_dataset_sizes / total_samples
+        # try uniform ?
+        # Try log the clients and see distributions
+
 
         # Get first d clients
         A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
 
 
         # Update models
-        self.model.train()
+        self.model.eval()
         for c in A_client_set:
             c.change_model(self.model, dcopy=False)
 
