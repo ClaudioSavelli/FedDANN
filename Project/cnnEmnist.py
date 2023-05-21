@@ -142,7 +142,7 @@ def main():
 
     p = 0.25
     mode_selected = "disabled" if args.test_mode else "online"
-    name = f"centralised_epochs{args.num_epochs}_lr{args.lr}_wd{args.wd}_m{args.m}"
+    name = f"c_ep{args.num_epochs}_lr{args.lr}_wd{args.wd}_m{args.m}"
 
 
     wandb.init(
