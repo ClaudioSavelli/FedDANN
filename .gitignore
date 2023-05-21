@@ -2,3 +2,4 @@
 /Project/wandb/
 /Project/.idea/
 /Project/__pycache__/
+*.ps1
