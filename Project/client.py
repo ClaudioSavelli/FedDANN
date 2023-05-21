@@ -105,7 +105,7 @@ class Client:
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
-        new_sd = self.model.state_dict()
+        new_sd = self.model.parameters()
         del self.model
 
         ## model.parameters returns
