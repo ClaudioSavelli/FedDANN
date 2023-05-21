@@ -161,9 +161,10 @@ class Server:
     def step(self, new_grad):
 
         self.optim.zero_grad()
-        for i, p in enumerate(self.model.state_dict().values()):
-            if p.requires_grad:
-                p.grad = new_grad[i]
+        model_sd = self.model.state_dict()
+        for i, p_key in enumerate(model_sd):
+            if model_sd[p_key].requires_grad:
+                model_sd[p_key].grad = new_grad[key]
         self.optim.step()
 
 
