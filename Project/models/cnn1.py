@@ -70,10 +70,10 @@ class My_CNN(torch.nn.Module):
             return self.net(x), (0.0, 0.0)
         else:
             z_params = self.net(x)
-            z_mu = z_params[:, :1024]
-            z_sigma = F.softplus(z_params[:, 1024:])
+            z_mu = z_params[:,:]
+            z_sigma = F.softplus(z_params[:,:])
             z_dist = distributions.Independent(distributions.normal.Normal(z_mu, z_sigma), 1)
-            z = z_dist.rsample([num_samples]).view([-1, 1024])
+            z = z_dist.rsample([num_samples]).view([-1, 2048])
             
             if return_dist:
                 return z, (z_mu, z_sigma)
