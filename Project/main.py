@@ -288,7 +288,7 @@ def main():
     model.to("cuda")
     print('Done.')
 
-    print('Generate datasets... ', end="")
+    print('Generate datasets... ')
     if args.dataset_selection == 'default':
         train_datasets, test_datasets = get_datasets(args)
     elif args.dataset_selection == 'rotated':
@@ -298,7 +298,7 @@ def main():
     else:
         raise Exception("Wrong dataset selection.")
         
-    print('Done.')
+    print('\nDone.')
 
     metrics = set_metrics(args)
 

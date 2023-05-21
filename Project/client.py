@@ -62,7 +62,7 @@ class Client:
 
             loss = self.criterion(outputs, labels) # + L2 +
             
-            if self.args.l2r != 0.0:
+            if self.args.l2r != 0.0: #0.01 works quite well (as starting point)
                 regL2R = z.norm(dim=1).mean()
                 loss = loss + self.args.l2r*regL2R
             

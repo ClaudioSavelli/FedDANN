@@ -67,7 +67,7 @@ class My_CNN(torch.nn.Module):
     
     def featurise(self, x, num_samples=1, return_dist=False):
         if not self.probabilistic:
-            return self.net(x)
+            return self.net(x), (0.0, 0.0)
         else:
             z_params = self.net(x)
             z_mu = z_params[:,:self.z_dim]
@@ -78,4 +78,4 @@ class My_CNN(torch.nn.Module):
             if return_dist:
                 return z, (z_mu,z_sigma)
             else:
-                return z, 0.0, 0.0
+                return z, (0.0, 0.0)
