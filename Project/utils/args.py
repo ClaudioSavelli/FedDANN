@@ -21,6 +21,7 @@ def get_parser():
     parser.add_argument('--bs', type=int, default=64, help='batch size')
     parser.add_argument('--wd', type=float, default=1e-4, help='weight decay')
     parser.add_argument('--m', type=float, default=0.9, help='momentum')
+    parser.add_argument('--sm', type=float, default=0, help='server_momentum')
     parser.add_argument('--d', type=int, default=20, help='pow_d')
     parser.add_argument('--l2r', type=float, default=0.0, help='l2')
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
