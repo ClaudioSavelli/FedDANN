@@ -20,7 +20,7 @@ class Server:
         self.train_clients, self.validation_clients = self.split_train_val(train_clients)
         self.test_clients = test_clients
         self.model = model
-        self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = 0)#, weight_decay=args.wd)
+        self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = self.args.sm)#, weight_decay=args.wd)
         self.metrics = metrics
         #self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
@@ -146,15 +146,16 @@ class Server:
 
         # updates = [(abs_weight, update), ...]
         n = sum([u[0] for u in updates])
-        new_grad = torch.zeros_like(self.model.parameters())
+        new_grad = [torch.zeros_like(p) for p in self.model.parameters()]
 #        new_grad = {}
 #        for key in self.model.state_dict():
 #            if self.model.state_dict()[key].requires_grad:
 #                new_grad[key] = 0*self.model.state_dict()[key]
-
-        for i, (weight, update) in enumerate(updates):
+        model_params = [p for p in self.model.parameters()]
+        for weight, update in updates:
+            update_params = [p for p in update]
             for i in range(len(new_grad)):
-                new_grad += (self.model.params - update) * (weight/n)
+                new_grad[i] += (model_params[i] - update_params[i]) * (weight/n)
 
         return new_grad
 
@@ -163,7 +164,7 @@ class Server:
         self.optim.zero_grad()
         for i, p in enumerate(self.model.parameters()):
             if p.requires_grad:
-                p.grad = torch.Tensor(-new_grad[i])
+                p.grad = torch.Tensor(new_grad[i])
         self.optim.step()
 
 
@@ -245,8 +246,6 @@ class Server:
                 name = k + '_train'
                 wandb.log({name: v, "n_round": n_round})
         print(self.metrics['eval_train'])
-        input()
-
 
     def test(self, n_round):
         """
