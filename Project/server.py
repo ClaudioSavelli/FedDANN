@@ -2,6 +2,7 @@ import copy
 
 import wandb
 
+import torch.optim
 import random
 import numpy as np
 import torch
@@ -19,8 +20,9 @@ class Server:
         self.train_clients, self.validation_clients = self.split_train_val(train_clients)
         self.test_clients = test_clients
         self.model = model
+        self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = self.args.sm)#, weight_decay=args.wd)
         self.metrics = metrics
-        self.model_params_dict = copy.deepcopy(self.model.state_dict())
+        #self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
     def count_labels(self, clients): 
         res = list()
@@ -71,13 +73,16 @@ class Server:
         client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
         total_samples = np.sum(client_dataset_sizes)
         client_probabilities = client_dataset_sizes / total_samples
+        # try uniform ?
+        # Try log the clients and see distributions
+
 
         # Get first d clients
         A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
 
 
         # Update models
-        self.model.train()
+        self.model.eval()
         for c in A_client_set:
             c.change_model(self.model, dcopy=False)
 
@@ -112,7 +117,7 @@ class Server:
 
         return updates
 
-    def aggregate(self, updates):
+    def aggregate_old(self, updates):
         """
         This method handles the FedAvg aggregation
         :param updates: updates received from the clients
@@ -136,6 +141,31 @@ class Server:
             new_sd[key] = new_sd[key]/total_count
 
         return new_sd
+
+    def aggregate(self, updates):
+
+        # updates = [(abs_weight, update), ...]
+        n = sum([u[0] for u in updates])
+        new_grad = [torch.zeros_like(p) for p in self.model.parameters()]
+#        new_grad = {}
+#        for key in self.model.state_dict():
+#            if self.model.state_dict()[key].requires_grad:
+#                new_grad[key] = 0*self.model.state_dict()[key]
+        model_params = [p for p in self.model.parameters()]
+        for weight, update in updates:
+            update_params = [p for p in update]
+            for i in range(len(new_grad)):
+                new_grad[i] += (model_params[i] - update_params[i]) * (weight/n)
+
+        return new_grad
+
+    def step(self, new_grad):
+
+        self.optim.zero_grad()
+        for i, p in enumerate(self.model.parameters()):
+            if p.requires_grad:
+                p.grad = torch.Tensor(new_grad[i])
+        self.optim.step()
 
 
 
@@ -165,10 +195,13 @@ class Server:
                 c.change_model(self.model) #with deepcopy
 
             updates = self.train_round(clients, r, args)
-            new_parameters = self.aggregate(updates)
+
+            new_grad = self.aggregate(updates)
+            self.step(new_grad)
             sys.stdout.write("\n")
 
-            self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
+            #new_parameters = self.aggregate_old()
+            #self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
 
             if (r+1) % self.args.gc == 0:
                 print("Doing Gargage Collector in GPU")
@@ -213,7 +246,6 @@ class Server:
                 name = k + '_train'
                 wandb.log({name: v, "n_round": n_round})
         print(self.metrics['eval_train'])
-
 
     def test(self, n_round):
         """

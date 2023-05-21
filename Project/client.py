@@ -55,10 +55,17 @@ class Client:
             labels = labels.to(self.device)
         
             # forward
-            outputs = self.model(images)
+            z, (z_mu, z_sigma) = self.model.featurise(images, return_dist=True)
+            outputs = self.model.cls(z)
+            
+            #outputs = self.model(images)
 
             loss = self.criterion(outputs, labels) # + L2 +
-
+            
+            if self.args.l2r != 0.0: #0.01 works quite well (as starting point)
+                regL2R = z.norm(dim=1).mean()
+                loss = loss + self.args.l2r*regL2R
+            
             # backward
             optimizer.zero_grad()
             loss.backward()
@@ -83,7 +90,7 @@ class Client:
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optmz)
 
-        new_sd = self.model.state_dict()
+        new_sd = self.model.parameters()
         del self.model
 
         ## model.parameters returns

@@ -142,12 +142,16 @@ def main():
 
     p = 0.25
     mode_selected = "disabled" if args.test_mode else "online"
+    name = f"c_ep{args.num_epochs}_lr{args.lr}_wd{args.wd}_m{args.m}"
+
 
     wandb.init(
         mode=mode_selected,
+    
 
         # set the wandb project where this run will be logged
         project="RealEmnistBenchmark",
+        name = name,
         
         # track hyperparameters and run metadata
         config={
