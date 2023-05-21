@@ -256,7 +256,7 @@ def main():
 
         # set the wandb project where this run will be logged
         project=project,
-        name="Test spericolato",
+        name=name,
         # track hyperparameters and run metadata
         config={
         "learning_rate": args.lr,
