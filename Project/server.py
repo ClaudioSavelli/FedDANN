@@ -22,7 +22,7 @@ class Server:
         self.model = model
         self.optim = torch.optim.SGD(params=model.parameters(), lr=0.1, momentum = 0.9)#, weight_decay=args.wd)
         self.metrics = metrics
-        self.model_params_dict = copy.deepcopy(self.model.state_dict())
+        #self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
     def count_labels(self, clients): 
         res = list()
@@ -146,25 +146,24 @@ class Server:
 
         # updates = [(abs_weight, update), ...]
         n = sum([u[0] for u in updates])
-        #new_grad = torch.zeros_like(self.model.state_dict())
-        new_grad = {}
-        for key in self.model.state_dict():
-            if self.model.state_dict()[key].requires_grad:
-                new_grad[key] = 0*self.model.state_dict()[key]
+        new_grad = torch.zeros_like(self.model.parameters())
+#        new_grad = {}
+#        for key in self.model.state_dict():
+#            if self.model.state_dict()[key].requires_grad:
+#                new_grad[key] = 0*self.model.state_dict()[key]
 
-        for i,u in enumerate(updates):
-            for key in self.model.state_dict():
-                new_grad[key] += (self.model.state_dict()[key] - u[1][key]) * (u[0]/n)
+        for i, (weight, update) in enumerate(updates):
+            for i in range(len(new_grad)):
+                new_grad += (self.model.params - update) * (weight/n)
 
         return new_grad
 
     def step(self, new_grad):
 
         self.optim.zero_grad()
-        model_sd = self.model.state_dict()
-        for i, p_key in enumerate(model_sd):
-            if model_sd[p_key].requires_grad:
-                model_sd[p_key].grad = new_grad[key]
+        for i, p in enumerate(self.model.parameters()):
+            if p.requires_grad:
+                p.grad = torch.Tensor(-new_grad[i])
         self.optim.step()
 
 
