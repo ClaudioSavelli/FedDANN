@@ -256,7 +256,7 @@ def main():
 
         # set the wandb project where this run will be logged
         project=project,
-        name=name,
+        name="Test spericolato",
         # track hyperparameters and run metadata
         config={
         "learning_rate": args.lr,
@@ -288,7 +288,7 @@ def main():
     model.to("cuda")
     print('Done.')
 
-    print('Generate datasets... ', end="")
+    print('Generate datasets... ')
     if args.dataset_selection == 'default':
         train_datasets, test_datasets = get_datasets(args)
     elif args.dataset_selection == 'rotated':
