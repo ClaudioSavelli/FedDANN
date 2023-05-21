@@ -149,11 +149,12 @@ class Server:
         #new_grad = torch.zeros_like(self.model.state_dict())
         new_grad = {}
         for key in self.model.state_dict():
-            new_grad[key] = 0*self.model.state_dict()[key]
+            if self.model.state_dict()[key].requires_grad:
+                new_grad[key] = 0*self.model.state_dict()[key]
 
         for i,u in enumerate(updates):
             for key in self.model.state_dict():
-                new_grad[key] += self.model.state_dict()[key].sub( u[1][key] ).mul(u[0]/n)
+                new_grad[key] += (self.model.state_dict()[key] - u[1][key]) * (u[0]/n)
 
         return new_grad
 
