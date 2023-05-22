@@ -1,4 +1,5 @@
 import argparse
+import torch
 
 
 def get_parser():
@@ -12,6 +13,7 @@ def get_parser():
                         help='Run the experiment with the non-IID partition (IID by default). Only on FEMNIST dataset.')
     parser.add_argument('--test_mode', action='store_true', default=False,
                         help='Enable or disable test mode.')
+    parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu', help='choose the device')
     parser.add_argument('--model', type=str, default = 'cnn', help='model name')
     parser.add_argument('--num_rounds', type=int, default = 1000, help='number of rounds')
     parser.add_argument('--num_epochs', type=int, default = 1, help='number of local epochs')
@@ -26,6 +28,7 @@ def get_parser():
     parser.add_argument('--prob', action='store_true', default=False, help='if z dist is probabilistic in fedSR')
     parser.add_argument('--l2r', type=float, default=0.0, help='l2')
     parser.add_argument('--cmi', type=float, default=0.0, help='cmi')
+    parser.add_argument('--z_dim', type=int, default=1024, help='dimension of z')
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
     parser.add_argument('--tf', type=float, default=0.8, help='train_fraction')
     parser.add_argument('--gc', type=int, default=1001, help='after how many rounds call the garbage collector for cleaning GPU')

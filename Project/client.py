@@ -22,12 +22,14 @@ class Client:
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=255)
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
+        self.optim = optim.SGD(params=self.model.parameters(), lr=args.lr, momentum=args.m, weight_decay=args.wd)
 
         self.device = device
         
-        self.r_mu = nn.Parameter(torch.zeros(62, 1024)).to(self.device)
-        self.r_sigma = nn.Parameter(torch.ones(62, 1024)).to(self.device)
+        self.r_mu = nn.Parameter(torch.zeros(62, args.z_dim)).to(self.device)
+        self.r_sigma = nn.Parameter(torch.ones(62, args.z_dim)).to(self.device)
         self.C = nn.Parameter(torch.ones([])).to(self.device)
+        # self.optim.add_param_group({'params':[self.r_mu, self.r_sigma, self.C]})
 
     def __str__(self):
         return self.name
@@ -46,9 +48,11 @@ class Client:
             return self.model(images)
         elif self.args.model == 'cnn': 
             return self.model(images)
+        elif self.args.model == 'fedsr': 
+            return self.model(images)
         raise NotImplementedError
 
-    def run_epoch(self, cur_epoch, optimizer):
+    def run_epoch(self, cur_epoch):
         """
         This method locally trains the model with the dataset of the client. It handles the training at mini-batch level
         :param cur_epoch: current epoch of training
@@ -82,14 +86,14 @@ class Client:
                 loss = loss + self.args.cmi*regCMI
             
             # backward
-            optimizer.zero_grad()
+            self.optim.zero_grad()
             loss.backward()
 
             #Clip norm
             #torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
 
             # gradient descent or adam step
-            optimizer.step()
+            self.optim.step()
 
 
 
@@ -100,11 +104,11 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
         params = self.model.parameters()
-        optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m, weight_decay=args.wd)
+        # optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m, weight_decay=args.wd)
         # optmz.add_param_group({'params':[self.r_mu,self.r_sigma,self.C],'lr':args.lr,'momentum':0.9})
 
         for epoch in range(self.args.num_epochs):
-            self.run_epoch(epoch, optimizer=optmz)
+            self.run_epoch(epoch)
 
         new_sd = self.model.parameters()
         del self.model
