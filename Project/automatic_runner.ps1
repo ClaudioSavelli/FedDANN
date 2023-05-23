@@ -21,4 +21,10 @@ C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learnin
 C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 10--niid        
 
 #quelli da fare dopo appena sappiamo come fare con l1o
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 0
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection rotated
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 0
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 1
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 2
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 3
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 4
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 5
