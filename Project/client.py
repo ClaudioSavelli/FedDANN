@@ -64,12 +64,13 @@ class Client:
             labels = labels.to(self.device)
         
             # forward
-            z, (z_mu, z_sigma) = self.model.featurise(images, return_dist=True)
-            outputs = self.model.cls(z)
+            if self.model == 'fedsr':
+                z, (z_mu, z_sigma) = self.model.featurise(images, return_dist=True)
+                outputs = self.model.cls(z)
             
-            #outputs = self.model(images)
+            outputs = self.model(images)
 
-            loss = self.criterion(outputs, labels) # + L2 +
+            loss = self.criterion(outputs, labels)
             
             if self.args.l2r != 0.0: #0.01 works quite well (as starting point)
                 regL2R = z.norm(dim=1).mean()
