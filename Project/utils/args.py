@@ -24,21 +24,20 @@ def get_parser():
     parser.add_argument('--sm', type=float, default=0, help='server_momentum')
     parser.add_argument('--tf', type=float, default=0.8, help='train_fraction')
     parser.add_argument('--d', type=int, default=20, help='pow_d')
+    
+    # Smart client selection arguments
+    parser.add_argument('--client_selection', type=str, default='random', choices=['random', 'biased1', 'biased2', 'pow'], required=False, help='client selection')
+    parser.add_argument('--pow_d', type=int, default=10, help='pow_d')
+    parser.add_argument('--pow_first_selection', type=str, default='weighted', choices=['weighted', 'uniform'], required=False, 
+                        help='the way we choose the first d clients in power of choice')
+    
+    # Domain generalization arguments
+    parser.add_argument('--dataset_selection', type=str, default='default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
+    parser.add_argument('--leftout', type=int, default=0, choices=[0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
     parser.add_argument('--l2r', type=float, default=0.0, help='l2')
     parser.add_argument('--cmi', type=float, default=0.0, help='cmi')
     parser.add_argument('--prob', action='store_true', default=False, help='fedsr probabilistic or not')
     parser.add_argument('--z_dim', type=int, default=1024, help='dim of z')
-    
-    # Smart client selection arguments
-    parser.add_argument('--client_selection', type=str, default = 'random', choices=['random', 'biased1', 'biased2', 'pow'], required=False, help='client selection')
-    parser.add_argument('--pow_d', type=int, default=10, help='pow_d')
-    parser.add_argument('--pow_first_selection', type=str, default = 'weighted', choices=['weighted', 'uniform'], required=False, 
-                        help='the way we choose the first d clients in power of choice')
-    
-    # Domain generalization arguments
-    parser.add_argument('--dataset_selection', type=str, default = 'default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
-    parser.add_argument('--leftout', type=int, default=0, choices=[0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
-    parser.add_argument('--l2r', type=float, default=0.0, help='l2')
 
     # Print / Computational arguments
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
