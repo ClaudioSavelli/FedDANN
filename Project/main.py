@@ -119,7 +119,6 @@ def my_read_femnist_dir_rotated(data_dir, transform):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-
     i = 1
     num_file = 0
     for f in files:
@@ -186,6 +185,7 @@ def get_datasets_rotated(args):
     if args.dataset == 'femnist':
         full_data_dir = os.path.join('data', 'RotatedFEMNIST')
         full_datasets_lists = my_read_femnist_dir_rotated(full_data_dir, train_transforms)
+        print(full_datasets_lists[args.leftout])
 
         if args.dataset_selection == 'rotated':
             all_data = []
@@ -197,17 +197,35 @@ def get_datasets_rotated(args):
             test_datasets = all_data[int(len(all_data)*0.8):]
             
         elif args.dataset_selection == 'L1O':
-            test_datasets = full_datasets_lists[args.leftout]
+            all_data = []
             for i, domain in enumerate(full_datasets_lists):
                 if i != args.leftout:
-                    train_datasets.extend(domain)
-            random.shuffle(train_datasets)
-                
+                    all_data.extend(domain)
+            
+            random.shuffle(all_data)
+            train_datasets = all_data[:int(len(all_data)*0.8)]
+            test_datasets = all_data[int(len(all_data)*0.8):]
     else:
         raise NotImplementedError
-    
+
     return train_datasets, test_datasets
 
+def take_l1o(args): 
+    train_transforms, test_transforms = get_transforms(args)
+    data_dir = os.path.join('data', 'RotatedFEMNIST')
+    data = []
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+    f = files[args.leftout]
+    print(f)
+    file_path = os.path.join(data_dir, f)
+    
+    with open(file_path, 'r') as inf:
+        cdata = json.load(inf)
+        data.append([])
+        for user, images in cdata['user_data'].items():    
+            data[0].append(Femnist(images, test_transforms, user))
+    return data
 
 def set_metrics(args):
     num_classes = get_dataset_num_classes(args.dataset)
@@ -312,6 +330,9 @@ def main():
 
     server.train(args)
 
+    if args.dataset_selection == 'L1O':
+        server.test_L1O(take_l1o(args))    
+    
     wandb.finish()
 
 if __name__ == '__main__':

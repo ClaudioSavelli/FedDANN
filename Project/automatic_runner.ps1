@@ -15,10 +15,10 @@
 #C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --client_selection biased2 --clients_per_round 10
 #C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --client_selection biased2 --clients_per_round 10 --niid
 
-C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 10 --num_epochs 10 --niid   
-C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 1 --niid 
-C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 5 --niid
-C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 10--niid        
+#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 10 --num_epochs 10 --niid   
+#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 1 --niid 
+#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 5 --niid
+#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --clients_per_round 20 --num_epochs 10--niid        
 
 #quelli da fare dopo appena sappiamo come fare con l1o
 C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection rotated
