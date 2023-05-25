@@ -22,6 +22,7 @@ from utils.args import get_parser
 from datasets.idda import IDDADataset
 from models.deeplabv3 import deeplabv3_mobilenetv2
 from models.cnn1 import My_CNN
+from models.fedSrNet import FedSrNet
 from utils.stream_metrics import StreamSegMetrics, StreamClsMetrics
 
 
@@ -56,6 +57,8 @@ def model_init(args):
         return model
     if args.model == 'cnn':
         return My_CNN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset))
+    if args.model == 'fedsr':
+        return FedSrNet(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset), args)
     raise NotImplementedError
 
 
@@ -71,7 +74,7 @@ def get_transforms(args):
             sstr.ToTensor(),
             sstr.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-    elif args.model == 'cnn' or args.model == 'resnet18':
+    elif args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr':
         normalize = transforms.Normalize(
         mean=0.1736,
         std=0.3248,
@@ -217,7 +220,7 @@ def set_metrics(args):
             'test_same_dom': StreamSegMetrics(num_classes, 'test_same_dom'),
             'test_diff_dom': StreamSegMetrics(num_classes, 'test_diff_dom')
         }
-    elif args.model == 'resnet18' or args.model == 'cnn':
+    elif args.model == 'resnet18' or args.model == 'cnn' or args.model == 'fedsr':
         metrics = {
             'eval_train': StreamClsMetrics(num_classes, 'eval_train'),
             'test': StreamClsMetrics(num_classes, 'test')

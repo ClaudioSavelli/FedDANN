@@ -2,6 +2,7 @@ import copy
 import torch
 
 from torch import optim, nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import copy
 
@@ -23,6 +24,11 @@ class Client:
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
         self.device = device
+        
+        self.r_mu = nn.Parameter(torch.zeros(args.num_classes, args.z_dim).to(self.device))
+        self.r_sigma = nn.Parameter(torch.ones(args.num_classes, args.z_dim).to(self.device))
+        self.C = nn.Parameter(torch.ones([]).to(self.device))
+
 
     def __str__(self):
         return self.name
@@ -39,7 +45,7 @@ class Client:
             return self.model(images)['out']
         elif self.args.model == 'resnet18':
             return self.model(images)
-        elif self.args.model == 'cnn': 
+        elif self.args.model == 'cnn' or 'fedsr': 
             return self.model(images)
         raise NotImplementedError
 
@@ -65,6 +71,16 @@ class Client:
             if self.args.l2r != 0.0: #0.01 works quite well (as starting point)
                 regL2R = z.norm(dim=1).mean()
                 loss = loss + self.args.l2r*regL2R
+            if self.args.cmi != 0.0:
+                r_sigma_softplus = F.softplus(self.r_sigma)
+                r_mu = self.r_mu[labels]
+                r_sigma = r_sigma_softplus[labels]
+                z_mu_scaled = z_mu*self.C
+                z_sigma_scaled = z_sigma*self.C
+                regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
+                        (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
+                regCMI = regCMI.sum(1).mean()
+                loss = loss + self.args.cmi*regCMI
             
             # backward
             optimizer.zero_grad()
@@ -84,11 +100,11 @@ class Client:
         (by calling the run_epoch method for each local epoch of training)
         :return: length of the local dataset, copy of the model parameters
         """
-        params = self.model.parameters()
-        optmz = optim.SGD(params=params, lr=args.lr, momentum=args.m, weight_decay=args.wd)
+        optimizer = optim.SGD(params=self.model.parameters(), lr=args.lr, momentum=args.m, weight_decay=args.wd)
+        optimizer.add_param_group({'params': [self.r_mu, self.r_sigma, self.C]})
 
         for epoch in range(self.args.num_epochs):
-            self.run_epoch(epoch, optimizer=optmz)
+            self.run_epoch(epoch, optimizer=optimizer)
 
         new_sd = self.model.parameters()
         del self.model

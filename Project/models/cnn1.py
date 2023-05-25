@@ -45,7 +45,7 @@ class My_CNN(torch.nn.Module):
     def net(self, x): 
         out = self.dropout1(self.layer1(x))
         out = self.dropout2(self.layer2(out))
-        out = out.reshape(out.shape[0],-1)
+        out = out.view(out.shape[0],-1)
         out = self.dropout3(self.fc1(out))
         return out
     

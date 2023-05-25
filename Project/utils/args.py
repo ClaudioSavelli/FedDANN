@@ -1,21 +1,24 @@
 import argparse
+import torch
 
 
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42, help='random seed')
-    parser.add_argument('--dataset', type=str, default = 'femnist', choices=['idda', 'femnist'], required=False, help='dataset name')
-    parser.add_argument('--client_selection', type=str, default = 'random', choices=['random', 'biased1', 'biased2', 'pow'], required=False, help='client selection')
-    parser.add_argument('--dataset_selection', type=str, default = 'default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
+    parser.add_argument('--dataset', type=str, default='femnist', choices=['idda', 'femnist'], required=False, help='dataset name')
+    parser.add_argument('--num_classes', type=int, default=62, help='number of classes')
+    parser.add_argument('--client_selection', type=str, default='random', choices=['random', 'biased1', 'biased2', 'pow'], required=False, help='client selection')
+    parser.add_argument('--dataset_selection', type=str, default='default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
     parser.add_argument('--leftout', type=int, default=0, choices=[0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
     parser.add_argument('--niid', action='store_true', default=False,
                         help='Run the experiment with the non-IID partition (IID by default). Only on FEMNIST dataset.')
     parser.add_argument('--test_mode', action='store_true', default=False,
                         help='Enable or disable test mode.')
-    parser.add_argument('--model', type=str, default = 'cnn', help='model name')
-    parser.add_argument('--num_rounds', type=int, default = 1000, help='number of rounds')
-    parser.add_argument('--num_epochs', type=int, default = 1, help='number of local epochs')
-    parser.add_argument('--clients_per_round', type=int, default = 10, help='number of clients trained per round')
+    parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu', help='cuda or cpu')
+    parser.add_argument('--model', type=str, default='cnn', help='model name')
+    parser.add_argument('--num_rounds', type=int, default=1000, help='number of rounds')
+    parser.add_argument('--num_epochs', type=int, default=1, help='number of local epochs')
+    parser.add_argument('--clients_per_round', type=int, default=10, help='number of clients trained per round')
     parser.add_argument('--hnm', action='store_true', default=False, help='Use hard negative mining reduction or not')
     parser.add_argument('--lr', type=float, default=0.1, help='learning rate')
     parser.add_argument('--bs', type=int, default=64, help='batch size')
@@ -24,6 +27,9 @@ def get_parser():
     parser.add_argument('--sm', type=float, default=0, help='server_momentum')
     parser.add_argument('--d', type=int, default=20, help='pow_d')
     parser.add_argument('--l2r', type=float, default=0.0, help='l2')
+    parser.add_argument('--cmi', type=float, default=0.0, help='cmi')
+    parser.add_argument('--prob', action='store_true', default=False, help='fedsr probabilistic or not')
+    parser.add_argument('--z_dim', type=int, default=1024, help='dim of z')
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
     parser.add_argument('--tf', type=float, default=0.8, help='train_fraction')
     parser.add_argument('--gc', type=int, default=1001, help='after how many rounds call the garbage collector for cleaning GPU')
