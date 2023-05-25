@@ -66,20 +66,22 @@ class Server:
         return picked_users
 
     def power_of_choice_selection(self):
-        if self.args.d < self.args.clients_per_round:
+        if self.args.pow_d < self.args.clients_per_round:
             raise Exception("Power of choice: m < d < K not respected")
 
-        # Create dataset-size probabilities
-        client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
-        total_samples = np.sum(client_dataset_sizes)
-        client_probabilities = client_dataset_sizes / total_samples
-        # try uniform ?
-        # Try log the clients and see distributions
-
-
         # Get first d clients
-        A_client_set = np.random.choice(self.train_clients, size=self.args.d, replace=False, p=client_probabilities)
+        if self.args.pow_first_selection == "weighted":
+            # Create dataset-size probabilities
+            client_dataset_sizes = np.array([len(c.dataset) for c in self.train_clients])
+            total_samples = np.sum(client_dataset_sizes)
+            client_probabilities = client_dataset_sizes / total_samples
+            A_client_set = np.random.choice(self.train_clients, size=self.args.pow_d, replace=False, p=client_probabilities)
 
+        elif self.args.pow_first_selection == "uniform":
+            A_client_set = np.random.choice(self.train_clients, size=self.args.pow_d, replace=False)
+        
+        else:
+            raise Exception(f"Power of choice first selection argument (--pow_first_selection) value not recognized: {self.args.pow_first_selection}")
 
         # Update models
         self.model.eval()
@@ -108,7 +110,7 @@ class Server:
             # loading bar
             sys.stdout.write('\r')
             j = (i + 1) / n
-            sys.stdout.write("Round %d: [%-20s] %d%%" % (n_round+1, '=' * int(20 * j), 100 * j))
+            sys.stdout.write("Round %d: [%-20s] %s%%" % (n_round+1, '=' * int(20 * j),  f"{(100 * j):.4}"))
             sys.stdout.flush()
 
             n_samples, model_parameters = c.train(args)
@@ -234,7 +236,7 @@ class Server:
             # loading bar
             sys.stdout.write('\r')
             j = (i + 1) / n
-            sys.stdout.write("Evaluating validation clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
+            sys.stdout.write("Evaluating validation clients: [%-20s] %s%%" % ( '=' * int(20 * j), f"{(100 * j):.4}"))
             sys.stdout.flush()
 
             c.test(self.metrics['eval_train'])
@@ -258,7 +260,7 @@ class Server:
             ### loading bar
             sys.stdout.write('\r')
             j = (i + 1) / n
-            sys.stdout.write("Evaluating test clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
+            sys.stdout.write("Evaluating test clients: [%-20s] %s%%" % ( '=' * int(20 * j), f"{(100 * j):.4}"))
             sys.stdout.flush()
             ###
 
