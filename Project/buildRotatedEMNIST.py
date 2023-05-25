@@ -85,7 +85,11 @@ def get_clients():
     return clients
 
 def buildRotatedFEMNIST():
+    print("getting clients... ", end="")
     clients = get_clients()
+    print("done")
+
+    print("building dataset... ", end="")
     angles = [0, 15, 30, 45, 60, 75]
 
     client_array = []
@@ -129,6 +133,7 @@ def buildRotatedFEMNIST():
             num_images_array = []
             images_array = []
             labels_array = []
+    print("done")
             
 def visualize(file):
     file_path = f"./data/RotatedFEMNIST/{file}.json"
@@ -144,7 +149,7 @@ def visualize(file):
         plt.show()
 
 if __name__ == "__main__":
-    buildRotatedFEMNIST()
+    #buildRotatedFEMNIST()
     visualize(15)
     visualize(30)
     visualize(45)

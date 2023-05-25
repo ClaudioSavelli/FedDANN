@@ -235,18 +235,37 @@ def gen_clients(args, train_datasets, test_datasets, model, device):
     return clients[0], clients[1]
 
 
-def main():
-    parser = get_parser()
-    args = parser.parse_args()
-    set_seed(args.seed)
+def initWandB(args):
+    wandbConfig = {
+        "learning_rate": args.lr,
+        "batch size": args.bs,
+        "weight decay": args.wd,
+        "momentum": args.m, 
+        "seed": args.seed,
+        "isNiid": args.niid,
+        "model": args.model,
+        "num_rounds": args.num_rounds,
+        "num_local_epochs": args.num_epochs,
+        "clients_per_round": args.clients_per_round,
+        "client_selection": args.client_selection,
+        "pow_d": args.pow_d, 
+        "architecture": "CNN",
+        "dataset": "FeMnist",
+        "Optimiser": "SGD",
+        "criterion": "CrossEntropyLoss",
+        "p": 0.25,
+        }
+
 
     if args.client_selection == 'biased':
-        project = "SmartClientSelection"
+        project = "Real_SmartClientSelection"
         name = f"{'niid' if args.niid else 'iid'}_{args.client_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
     
     elif args.client_selection == 'pow':
-        project = "SmartClientSelection"
-        name = f"{'niid' if args.niid else 'iid'}_{args.client_selection}_cr{args.clients_per_round}_d{args.d}_epochs{args.num_epochs}_lr{args.lr}"
+        project = "Real_SmartClientSelection"
+        name = f"{'niid' if args.niid else 'iid'}_{args.client_selection}_{args.pow_first_selection}_cr{args.clients_per_round}_d{args.pow_d}_epochs{args.num_epochs}_lr{args.lr}"
+        wandbConfig["pow_selection"] = args.pow_first_selection
+        if args.pow_d > 10: project = "Real_SmartClientSelection_big_d"
     else:
         ## Data selection projects
         if args.dataset_selection == 'default': 
@@ -259,7 +278,7 @@ def main():
             project = "RealRotatedFemnist" 
             name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
     
-    
+    #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
         mode=mode_selected,
@@ -268,26 +287,16 @@ def main():
         project=project,
         name=name,
         # track hyperparameters and run metadata
-        config={
-        "learning_rate": args.lr,
-        "batch size": args.bs,
-        "weight decay": args.wd,
-        "momentum": args.m, 
-        "seed": args.seed,
-        "isNiid": args.niid,
-        "model": args.model,
-        "num_rounds": args.num_rounds,
-        "num_local_epochs": args.num_epochs,
-        "clients_per_round": args.clients_per_round,
-        "client_selection": args.client_selection,
-        "pow_d": args.d, 
-        "architecture": "CNN",
-        "dataset": "FeMnist",
-        "Optimiser": "SGD",
-        "criterion": "CrossEntropyLoss",
-        "p": 0.25,
-        }
+        config=wandbConfig
     )
+
+
+def main():
+    parser = get_parser()
+    args = parser.parse_args()
+    set_seed(args.seed)
+
+    initWandB(args)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(device)
