@@ -226,7 +226,7 @@ def main():
         mode=mode_selected,
 
         # set the wandb project where this run will be logged
-        project="RotatedEmnistBenchmark",
+        project="NewRotatedEmnistBenchmark",
         name = name, 
         
         # track hyperparameters and run metadata

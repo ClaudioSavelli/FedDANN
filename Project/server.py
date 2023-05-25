@@ -273,3 +273,25 @@ class Server:
                 name = k + '_test'
                 wandb.log({name: v, "n_round": n_round})
         print(self.metrics['test'])
+
+    def test_L1O(self, l1o_clients): 
+        self.metrics['test'].reset()
+
+        n = len(self.test_clients)
+        for i,c in enumerate(self.test_clients):
+            ### loading bar
+            sys.stdout.write('\r')
+            j = (i + 1) / n
+            sys.stdout.write("Evaluating l1o clients: [%-20s] %d%%" % ( '=' * int(20 * j), 100 * j))
+            sys.stdout.flush()
+            ###
+
+            c.test(self.metrics['test'])
+        
+        #To load results obtained on wandb
+        results = self.metrics['test'].get_results()
+        for k, v in results.items():
+            if k != 'Class Acc': 
+                name = k + '_l10'
+                wandb.log({name: v})
+        print(self.metrics['test'])
