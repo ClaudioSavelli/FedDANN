@@ -24,6 +24,7 @@ def get_parser():
     parser.add_argument('--sm', type=float, default=0, help='server_momentum')
     parser.add_argument('--tf', type=float, default=0.8, help='train_fraction')
     parser.add_argument('--d', type=int, default=20, help='pow_d')
+    parser.add_argument('--num_classes', type=int, default=62, help='n_classes')
     
     # Smart client selection arguments
     parser.add_argument('--client_selection', type=str, default='random', choices=['random', 'biased1', 'biased2', 'pow'], required=False, help='client selection')

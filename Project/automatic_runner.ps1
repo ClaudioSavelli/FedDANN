@@ -28,3 +28,10 @@ C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learnin
 C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 3
 C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 4
 C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 5
+
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 0 --prob --l2r 1e-2 --cmi 5e-4 --z_dim 1024 --model fedsr
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 1 --prob --l2r 1e-2 --cmi 5e-4 --z_dim 1024 --model fedsr
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 2 --prob --l2r 1e-2 --cmi 5e-4 --z_dim 1024 --model fedsr
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 3 --prob --l2r 1e-2 --cmi 5e-4 --z_dim 1024 --model fedsr
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 4 --prob --l2r 1e-2 --cmi 5e-4 --z_dim 1024 --model fedsr
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 5 --prob --l2r 1e-2 --cmi 5e-4 --z_dim 1024 --model fedsr

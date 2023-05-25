@@ -188,7 +188,6 @@ def get_datasets_rotated(args):
     if args.dataset == 'femnist':
         full_data_dir = os.path.join('data', 'RotatedFEMNIST')
         full_datasets_lists = my_read_femnist_dir_rotated(full_data_dir, train_transforms)
-        print(full_datasets_lists[args.leftout])
 
         if args.dataset_selection == 'rotated':
             all_data = []
@@ -275,6 +274,9 @@ def initWandB(args):
         "Optimiser": "SGD",
         "criterion": "CrossEntropyLoss",
         "p": 0.25,
+        "l2r": args.l2r, 
+        "cmi": args.cmi, 
+        "z_dim": args.z_dim
         }
 
 
@@ -296,8 +298,12 @@ def initWandB(args):
             project = "RealRotatedFemnist" 
             name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'L1O': 
-            project = "RealRotatedFemnist" 
-            name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+            if args.model == 'fedsr': 
+                project = "CMIRotatedFemnist" 
+                name = f"{args.dataset_selection}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}_lr{args.lr}"
+            else:     
+                project = "RealRotatedFemnist" 
+                name = f"{args.dataset_selection}_leftout{args.leftout}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
     
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
