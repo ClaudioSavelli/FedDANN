@@ -31,7 +31,8 @@ def set_metrics():
     
     metrics = {
             'eval_train': StreamClsMetrics(num_classes, 'eval_train'),
-            'test': StreamClsMetrics(num_classes, 'test')
+            'test': StreamClsMetrics(num_classes, 'test'),
+            'l1O': StreamClsMetrics(num_classes, 'l1O')
     }
     
     return metrics
@@ -182,20 +183,6 @@ def read_l1o_emnist_dir(leftout):
     return Femnist(train_data, transform, "Centralised Train User"), \
             Femnist(test_data, transform, "Centralised Test User")
 
-def create_l1o_loader(train_dataset, test_dataset, batch_size, train_size = 0.8, shuffle = True): 
-    split_train_size = int((train_size)*(len(train_dataset))) 
-    split_valid_size = len(train_dataset) - split_train_size 
-    train_set, valid_set = torch.utils.data.random_split(train_dataset, [split_train_size, split_valid_size])
-    test_set = test_dataset
-
-
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=shuffle)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=shuffle)
-
-    return (train_loader, validation_loader, test_loader)
-
-
 def check_accuracy(loader, model, metric):
 
     metric.reset()
@@ -255,8 +242,8 @@ def main():
         train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs, train_size=args.tf)
     
     elif args.dataset_selection == 'L1O': 
-        train_dataset, test_dataset = read_l1o_emnist_dir(args.leftout)
-        train_loader, validation_loader, test_loader = create_l1o_loader(train_dataset, test_dataset, args.bs, train_size=args.tf)
+        train_dataset, l10_dataset = read_l1o_emnist_dir(args.leftout)
+        train_loader, validation_loader, test_loader = split_train_test(train_dataset, args.bs, train_size=args.tf)
 
     model = My_CNN(imageDim,62).to(device)
 
@@ -326,6 +313,16 @@ def main():
             name = k + '_test'
             wandb.log({name: v})
     print(metrics['test'])
+
+    check_accuracy(l10_dataset, model, metrics["l1O"])
+
+    #To put data on wandb
+    results = metrics['l1O'].get_results()
+    for k, v in results.items():
+        if k != 'Class Acc': 
+            name = k + '_l1O'
+            wandb.log({name: v})
+    print(metrics['l1O'])
 
 
     print('Learning Finished!')

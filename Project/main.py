@@ -240,7 +240,8 @@ def set_metrics(args):
     elif args.model == 'resnet18' or args.model == 'cnn' or args.model == 'fedsr':
         metrics = {
             'eval_train': StreamClsMetrics(num_classes, 'eval_train'),
-            'test': StreamClsMetrics(num_classes, 'test')
+            'test': StreamClsMetrics(num_classes, 'test'), 
+            'l1O': StreamClsMetrics(num_classes, 'l1O')
         }
     else:
         raise NotImplementedError
