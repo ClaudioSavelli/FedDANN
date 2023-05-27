@@ -19,6 +19,7 @@ class Server:
         self.args = args
         self.train_clients, self.validation_clients = self.split_train_val(train_clients)
         self.test_clients = test_clients
+        self.left_one_out_clients = None
         self.model = model
         self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = self.args.sm)#, weight_decay=args.wd)
         self.metrics = metrics
@@ -39,6 +40,9 @@ class Server:
     def select_clients(self):
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
         return np.random.choice(self.train_clients, num_clients, replace=False)
+    
+    def set_l1O_clients(self, client_list):
+        self.left_one_out_clients = client_list
 
     def biased_client_selection(self, prob, split):
         num_tot_clients = len(self.train_clients)
@@ -274,11 +278,14 @@ class Server:
                 wandb.log({name: v, "n_round": n_round})
         print(self.metrics['test'])
 
-    def test_L1O(self, l1o_clients): 
+        if self.args.dataset_selection == 'L1O':
+            self.test_L1O()  
+
+    def test_L1O(self): 
         self.metrics['l1O'].reset()
 
-        n = len(l1o_clients)
-        for i,c in enumerate(l1o_clients):
+        n = len(self.left_one_out_clients)
+        for i,c in enumerate(self.left_one_out_clients):
             ### loading bar
             sys.stdout.write('\r')
             j = (i + 1) / n
@@ -286,6 +293,7 @@ class Server:
             sys.stdout.flush()
             ###
 
+            c.change_model(self.model, dcopy=False)
             c.test(self.metrics['l1O'])
         
         #To load results obtained on wandb

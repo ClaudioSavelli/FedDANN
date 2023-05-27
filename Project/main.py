@@ -212,10 +212,11 @@ def get_datasets_rotated(args):
 
     return train_datasets, test_datasets
 
-def take_l1o(args): 
+def take_l1o_loader(args, model, device): 
     train_transforms, test_transforms = get_transforms(args)
     data_dir = os.path.join('data', 'RotatedFEMNIST')
     data = []
+    clients = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     f = files[args.leftout]
@@ -224,10 +225,11 @@ def take_l1o(args):
     
     with open(file_path, 'r') as inf:
         cdata = json.load(inf)
-        data.append([])
         for user, images in cdata['user_data'].items():    
-            data[0].append(Femnist(images, test_transforms, user))
-    return data
+            data.append(Femnist(images, test_transforms, user))
+        for ds in data:
+            clients.append(Client(args, ds, model, test_client = 1, device=device))
+    return clients
 
 def set_metrics(args):
     num_classes = get_dataset_num_classes(args.dataset)
@@ -296,8 +298,12 @@ def initWandB(args):
             project = "RealFemnist part 1"
             name = f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'rotated': 
-            project = "RealRotatedFemnist" 
-            name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+            if args.model == 'fedsr': 
+                project = "CMIRotatedFemnist" 
+                name = f"{args.dataset_selection}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}_lr{args.lr}"
+            else:
+                project = "RealRotatedFemnist" 
+                name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'L1O': 
             if args.model == 'fedsr': 
                 project = "CMIRotatedFemnist" 
@@ -355,12 +361,11 @@ def main():
 
     print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
+    if args.dataset_selection == 'L1O': 
+        server.set_l1O_clients(take_l1o_loader(args, model, device))
     print("Done.")
 
-    server.train(args)
-
-    if args.dataset_selection == 'L1O':
-        server.test_L1O(take_l1o(args))    
+    server.train(args)  
     
     wandb.finish()
 

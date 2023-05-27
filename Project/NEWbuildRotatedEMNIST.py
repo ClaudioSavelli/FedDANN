@@ -143,41 +143,8 @@ def buildRotatedFEMNIST(files_list):
     print("number of clients left: ", clients_left)
     sp = total_clients
     ep = len(clients)
-    #ep = sp + length
-    '''
-    while i != 16: 
-        print(sp, " ", ep)
-        for c in clients[sp:ep]:
-            client_array.append(c.client_name)
-            num_images_array.append(len(c))
-
-            this_client_images = []
-            this_client_labels = []
-            for img, label in c:
-                this_client_images.append(img.flatten().tolist())
-                this_client_labels.append(label)
-
-            images_array.append(this_client_images)
-            labels_array.append(this_client_labels)
-            
-            
-            myDict = {}
-            myDict["users"] = client_array
-            myDict["numSamples"] = num_images_array
-            myDict["user_data"] = {}
-
-            for j,c in enumerate(client_array):
-                myDict["user_data"][c] = {}
-                myDict["user_data"][c]["x"] = images_array[j]
-                myDict["user_data"][c]["y"] = labels_array[j]
-
-            with open(f"data/RotatedFEMNIST/rest_of_clients_{i}.json", "w") as outfile:
-                json.dump(myDict, outfile)
-        i = i + 1
-        sp = sp + length
-        ep = ep + length
-    '''
     print(sp, " ", ep)
+    
     for c in clients[sp:]:
         client_array.append(c.client_name)
         num_images_array.append(len(c))
