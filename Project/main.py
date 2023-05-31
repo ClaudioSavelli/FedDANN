@@ -22,6 +22,7 @@ from utils.args import get_parser
 from datasets.idda import IDDADataset
 from models.deeplabv3 import deeplabv3_mobilenetv2
 from models.cnn1 import My_CNN
+from models.DANN import DANN
 from models.fedSrNet import FedSrNet
 from utils.stream_metrics import StreamSegMetrics, StreamClsMetrics
 
@@ -59,6 +60,8 @@ def model_init(args):
         return My_CNN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset))
     if args.model == 'fedsr':
         return FedSrNet(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset), args)
+    if args.model == 'dann':
+        return DANN(get_dataset_image_dimension(), 6)
     raise NotImplementedError
 
 
@@ -74,7 +77,7 @@ def get_transforms(args):
             sstr.ToTensor(),
             sstr.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-    elif args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr':
+    elif args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
         normalize = transforms.Normalize(
         mean=0.1736,
         std=0.3248,
@@ -122,9 +125,9 @@ def my_read_femnist_dir_rotated(data_dir, transform): #read all the files
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    i = 1
+
     num_file = 0
-    for f in files:
+    for i, f in enumerate(files):
         #Loading bar
         sys.stdout.write('\r')
         sys.stdout.write("%d / %d" % (i, len(files)))
@@ -136,9 +139,9 @@ def my_read_femnist_dir_rotated(data_dir, transform): #read all the files
             data.append([])
             for user, images in cdata['user_data'].items():    
                 data[num_file].append(Femnist(images, transform, user))
+                data[num_file][-1].set_domain(i if i < 6 else 0)
             num_file += 1
-        i += 1
-    
+
     return data
 
 def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
@@ -182,7 +185,9 @@ def get_datasets(args):
 
 def get_datasets_rotated(args):
 
-    const_division = 0.72 #Normally it's 0.8, but considering that at the end we add 1000 clients manually in the train we re-evaluated the division number to keep it coherent
+    #Normally it's 0.8, but considering that at the end we add 1000 clients manually in the train we re-evaluated the division number to keep it coherent
+    const_division = 0.72
+
     train_datasets = []
     train_transforms, test_transforms = get_transforms(args)
 
@@ -192,6 +197,7 @@ def get_datasets_rotated(args):
         print("\nNumero di file roc: ", len(full_datasets_lists[6:]))
         print("Numero di file rotation: ", len(full_datasets_lists[:6]))
 
+        ### Se dobbiamo solo far rotated
         if args.dataset_selection == 'rotated':
             all_data = []
             for domain in full_datasets_lists[6:]:
@@ -254,7 +260,7 @@ def set_metrics(args):
             'test_same_dom': StreamSegMetrics(num_classes, 'test_same_dom'),
             'test_diff_dom': StreamSegMetrics(num_classes, 'test_diff_dom')
         }
-    elif args.model == 'resnet18' or args.model == 'cnn' or args.model == 'fedsr':
+    elif args.model == 'resnet18' or args.model == 'cnn' or args.model == 'fedsr' or args.model == 'dann':
         metrics = {
             'eval_train': StreamClsMetrics(num_classes, 'eval_train'),
             'test': StreamClsMetrics(num_classes, 'test'), 
@@ -321,14 +327,21 @@ def initWandB(args):
             if args.model == 'fedsr': 
                 project = "FinalRotatedFemnist" 
                 name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
+            elif args.model == 'dann':
+                project = "FinalRotatedFemnist"
+                name = f"{args.dataset_selection}_{args.model}_w{args.dann_w}"
             else:
                 project = "FinalRotatedFemnist" 
                 name = f"{args.dataset_selection}_{args.model}"
-        elif args.dataset_selection == 'L1O': 
-            if args.model == 'fedsr': 
-                project = "FinalRotatedFemnist" 
+        elif args.dataset_selection == 'L1O':
+            if args.model == 'fedsr':
+                project = "FinalRotatedFemnist"
                 name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
-            else:     
+            elif args.model == 'dann':
+                project = "FinalRotatedFemnist"
+                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
+
+            else:
                 project = "FinalRotatedFemnist" 
                 name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}"
     

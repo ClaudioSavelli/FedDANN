@@ -26,6 +26,7 @@ class Femnist(Dataset):
         self.samples = [[image, label] for image, label in zip(data['x'], data['y'])]
         self.transform = transform
         self.client_name = client_name
+        self.domain = None
 
     def __getitem__(self, index: int) -> Any:
         img, label = self.samples[index]
@@ -35,3 +36,6 @@ class Femnist(Dataset):
 
     def __len__(self) -> int:
         return len(self.samples)
+
+    def set_domain(self, domain):
+        self.domain = domain
