@@ -282,6 +282,7 @@ def initWandB(args):
         "server_momentum": args.sm,
         "seed": args.seed,
         "isNiid": args.niid,
+        "dataset": args.dataset_selection,
         "model": args.model,
         "num_rounds": args.num_rounds,
         "num_local_epochs": args.num_epochs,
@@ -318,18 +319,18 @@ def initWandB(args):
                 name = f"{'niid' if args.niid else 'iid'}_sm{args.sm}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
-                project = "CMIRotatedFemnist" 
-                name = f"{args.dataset_selection}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}_lr{args.lr}"
+                project = "FinalRotatedFemnist" 
+                name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
             else:
-                project = "RealRotatedFemnist" 
-                name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+                project = "FinalRotatedFemnist" 
+                name = f"{args.dataset_selection}_{args.model}"
         elif args.dataset_selection == 'L1O': 
             if args.model == 'fedsr': 
-                project = "CMIRotatedFemnist" 
-                name = f"{args.dataset_selection}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}_lr{args.lr}"
+                project = "FinalRotatedFemnist" 
+                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
             else:     
-                project = "RealRotatedFemnist" 
-                name = f"{args.dataset_selection}_leftout{args.leftout}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+                project = "FinalRotatedFemnist" 
+                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}"
     
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
