@@ -118,7 +118,7 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     return data
 
 
-def my_read_femnist_dir_rotated(data_dir, transform):
+def my_read_femnist_dir_rotated(data_dir, transform): #read all the files
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
@@ -182,31 +182,45 @@ def get_datasets(args):
 
 def get_datasets_rotated(args):
 
+    const_division = 0.72 #Normally it's 0.8, but considering that at the end we add 1000 clients manually in the train we re-evaluated the division number to keep it coherent
     train_datasets = []
     train_transforms, test_transforms = get_transforms(args)
 
     if args.dataset == 'femnist':
         full_data_dir = os.path.join('data', 'RotatedFEMNIST')
         full_datasets_lists = my_read_femnist_dir_rotated(full_data_dir, train_transforms)
+        print("\nNumero di file roc: ", len(full_datasets_lists[6:]))
+        print("Numero di file rotation: ", len(full_datasets_lists[:6]))
 
         if args.dataset_selection == 'rotated':
             all_data = []
-            for domain in full_datasets_lists:
+            for domain in full_datasets_lists[6:]:
                 all_data.extend(domain)
             
             random.shuffle(all_data)
-            train_datasets = all_data[:int(len(all_data)*0.8)]
-            test_datasets = all_data[int(len(all_data)*0.8):]
+            train_datasets = all_data[:int(len(all_data)*const_division)]
+            test_datasets = all_data[int(len(all_data)*const_division):]
+
+            for domain in full_datasets_lists[:6]: 
+                train_datasets.extend(domain)
+            
+            random.shuffle(train_datasets)
             
         elif args.dataset_selection == 'L1O':
             all_data = []
-            for i, domain in enumerate(full_datasets_lists):
-                if i != args.leftout:
-                    all_data.extend(domain)
+            for domain in full_datasets_lists[6:]:
+                all_data.extend(domain)
             
             random.shuffle(all_data)
-            train_datasets = all_data[:int(len(all_data)*0.8)]
-            test_datasets = all_data[int(len(all_data)*0.8):]
+            train_datasets = all_data[:int(len(all_data)*const_division)]
+            test_datasets = all_data[int(len(all_data)*const_division):]
+
+            for i, domain in enumerate(full_datasets_lists[:6]): 
+                if i != args.leftout:
+                    train_datasets.extend(domain)
+            
+            random.shuffle(train_datasets)
+
     else:
         raise NotImplementedError
 
@@ -220,13 +234,14 @@ def take_l1o_loader(args, model, device):
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     f = files[args.leftout]
-    print(f)
+    print("\nFile leftover: ", f)
     file_path = os.path.join(data_dir, f)
     
     with open(file_path, 'r') as inf:
         cdata = json.load(inf)
         for user, images in cdata['user_data'].items():    
             data.append(Femnist(images, test_transforms, user))
+        
         for ds in data:
             clients.append(Client(args, ds, model, test_client = 1, device=device))
     return clients
@@ -262,8 +277,9 @@ def initWandB(args):
     wandbConfig = {
         "learning_rate": args.lr,
         "batch size": args.bs,
-        "weight decay": args.wd,
+        "weight decay": args.wd,        
         "momentum": args.m, 
+        "server_momentum": args.sm,
         "seed": args.seed,
         "isNiid": args.niid,
         "model": args.model,
@@ -297,6 +313,9 @@ def initWandB(args):
         if args.dataset_selection == 'default': 
             project = "RealFemnist part 1"
             name = f"{'niid' if args.niid else 'iid'}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+            if args.sm != 0: 
+                project = "Server Momentum Femnist"
+                name = f"{'niid' if args.niid else 'iid'}_sm{args.sm}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
                 project = "CMIRotatedFemnist" 
