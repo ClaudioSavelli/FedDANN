@@ -2,6 +2,8 @@ import os
 import json
 import wandb
 import sys
+import copy
+import matplotlib.pyplot as plt
 
 import torch
 import random
@@ -97,11 +99,92 @@ def get_transforms(args):
         raise NotImplementedError
     return train_transforms, test_transforms
 
+def get_transforms_rotated(args):
+    if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
+        normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+        )
+
+        angles = [0, 15, 30, 45, 60, 75]
+        myAngleTransforms = []
+        for theta in angles:
+            t = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                transforms.ToTensor(),
+                normalize,
+            ])
+            myAngleTransforms.append(copy.deepcopy(t))
+
+        test_transforms = nptr.Compose([
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            normalize,
+        ])
+    else:
+        raise NotImplementedError
+    return myAngleTransforms, test_transforms
+
+def apply_transforms(args, train_datasets, test_datasets):
+    l1o_datasets = []
+
+    ### FOR DEFAULT
+    if args.dataset_selection == 'default':
+        train_transforms, test_transforms = get_transforms(args)
+
+        for dataset in train_datasets:
+            dataset.set_transform(train_transforms)
+
+        for dataset in test_datasets:
+            dataset.set_transform(test_transforms)
+
+    ### FOR ROTATED
+    elif args.dataset_selection == 'rotated':
+        train_transform_list, test_transforms = get_transforms_rotated(args)
+
+        total_clients = 1002
+        n_clients_per_angle = total_clients // 6
+        for i, dataset in enumerate(train_datasets):
+            transform_to_do = i // n_clients_per_angle
+            dataset.set_transform(train_transform_list[ transform_to_do if i < total_clients else 0 ])
+            dataset.set_domain(transform_to_do)
+
+        for dataset in test_datasets:
+            dataset.set_transform(test_transforms)
+
+    ### FOR L1O
+    elif args.dataset_selection == 'L1O':
+        train_transform_list, test_transforms = get_transforms_rotated(args)
+
+        total_clients = 1002
+        n_clients_per_angle = total_clients // 6
+        new_train_datasets = []
+
+        for i, dataset in enumerate(train_datasets):
+            transform_to_do = i // n_clients_per_angle
+            dataset.set_transform(train_transform_list[ transform_to_do if i < total_clients else 0 ])
+            dataset.set_domain(transform_to_do)
+
+            if transform_to_do == args.leftout:
+                l1o_datasets.append(dataset)
+            else:
+                new_train_datasets.append(dataset)
+        
+        for dataset in test_datasets:
+            dataset.set_transform(test_transforms)
+
+        train_datasets = new_train_datasets
+
+    return train_datasets, test_datasets, l1o_datasets
+            
+
+
 def my_read_femnist_dir(data_dir, transform, is_test_mode):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
-    # files = random.shuffle(files)
+    random.shuffle(files)
     if is_test_mode: files = np.random.choice(files, size = len(files)//6)
 
     i = 1
@@ -119,7 +202,6 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
         i += 1
     
     return data
-
 
 def my_read_femnist_dir_rotated(data_dir, transform): #read all the files
     data = []
@@ -147,7 +229,6 @@ def my_read_femnist_dir_rotated(data_dir, transform): #read all the files
 def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
     return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), \
            my_read_femnist_dir(test_data_dir, test_transform, is_test_mode)
-
 
 def get_datasets(args):
 
@@ -181,7 +262,6 @@ def get_datasets(args):
         raise NotImplementedError
 
     return train_datasets, test_datasets
-
 
 def get_datasets_rotated(args):
 
@@ -377,27 +457,55 @@ def main():
     print('Done.')
 
     print('Generate datasets... ')
-    if args.dataset_selection == 'default':
-        train_datasets, test_datasets = get_datasets(args)
-    elif args.dataset_selection == 'rotated':
-        train_datasets, test_datasets = get_datasets_rotated(args)
-    elif args.dataset_selection == 'L1O':
-        train_datasets, test_datasets = get_datasets_rotated(args)
-    else:
-        raise Exception("Wrong dataset selection.")
-        
+    # if args.dataset_selection == 'default':
+    #     train_datasets, test_datasets = get_datasets(args)
+    # elif args.dataset_selection == 'rotated':
+    #     train_datasets, test_datasets = get_datasets_rotated(args)
+    # elif args.dataset_selection == 'L1O':
+    #     train_datasets, test_datasets = get_datasets_rotated(args)
+    # else:
+    #     raise Exception("Wrong dataset selection.")
+    train_datasets, test_datasets = get_datasets(args)
     print('\nDone.')
+
+    print('Applying transformations... ')
+    train_datasets, test_datasets, l1o_datasets = apply_transforms(args, train_datasets, test_datasets)
+    print("\nDone.")
 
     metrics = set_metrics(args)
 
     print("Generating clients... ", end = "")
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, device)
+ 
     print("Done.")
 
     print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
+
+
+    for i in range(6):
+        if i == args.leftout: continue
+
+        client = None
+        while client == None:
+            client = np.random.choice(train_clients)
+            if client.dataset.domain != i:
+                client = None
+
+        i_ = np.random.randint(len(client.dataset))
+        img, label = client.dataset[i_]
+        img = np.array(img).reshape(28,28)
+        print("domain",i, "label",label)
+        plt.imshow(img, cmap="gray")
+        plt.show()
+
+    input()
+
+
+
     if args.dataset_selection == 'L1O': 
-        server.set_l1O_clients(take_l1o_loader(args, model, device))
+        _ , l1o_clients = gen_clients(args, [], l1o_datasets, model, device)
+        server.set_l1O_clients(l1o_clients)
     print("Done.")
 
     server.train(args)  

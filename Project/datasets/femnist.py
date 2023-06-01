@@ -30,8 +30,8 @@ class Femnist(Dataset):
 
     def __getitem__(self, index: int) -> Any:
         img, label = self.samples[index]
-        img = np.array(img, dtype=np.float32).reshape((28,28))
-        img = self.transform(img)
+        # img = np.array(img, dtype=np.float32).reshape((28,28))
+        # img = self.transform(img)
         return img, label
 
     def __len__(self) -> int:
@@ -39,3 +39,15 @@ class Femnist(Dataset):
 
     def set_domain(self, domain):
         self.domain = domain
+
+    def set_transform(self, transform):
+        self.transform = transform
+
+        new_samples = []
+        for i in range(len(self.samples)):
+            img, label = self.samples[i]
+            img_np = np.array(img, dtype=np.float32).reshape((28,28))
+            img_tr = self.transform( img_np )
+            new_samples.append([img_tr, label])
+
+        self.samples = new_samples
