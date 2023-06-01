@@ -293,6 +293,7 @@ def initWandB(args):
         "num_rounds": args.num_rounds,
         "num_local_epochs": args.num_epochs,
         "clients_per_round": args.clients_per_round,
+        "leftout": args.leftout, 
         "client_selection": args.client_selection,
         "pow_d": args.pow_d, 
         "architecture": "CNN",
@@ -301,7 +302,7 @@ def initWandB(args):
         "criterion": "CrossEntropyLoss",
         "p": 0.25,
         "l2r": args.l2r, 
-        "cmi": args.cmi, 
+        "cmi": args.cmi,
         "z_dim": args.z_dim
         }
 
