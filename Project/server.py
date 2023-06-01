@@ -279,9 +279,9 @@ class Server:
         print(self.metrics['test'])
 
         if self.args.dataset_selection == 'L1O':
-            self.test_L1O()  
+            self.test_L1O(n_round)  
 
-    def test_L1O(self): 
+    def test_L1O(self, n_round): 
         self.metrics['l1O'].reset()
 
         n = len(self.left_one_out_clients)
@@ -301,5 +301,5 @@ class Server:
         for k, v in results.items():
             if k != 'Class Acc': 
                 name = k + '_l10'
-                wandb.log({name: v})
+                wandb.log({name: v, "n_round": n_round})
         print(self.metrics['l1O'])
