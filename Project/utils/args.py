@@ -34,7 +34,7 @@ def get_parser():
     
     # Domain generalization arguments
     parser.add_argument('--dataset_selection', type=str, default='default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
-    parser.add_argument('--leftout', type=int, default=0, choices=[0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
+    parser.add_argument('--leftout', type=int, default=-1, choices=[-1, 0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
     parser.add_argument('--l2r', type=float, default=0.0, help='l2')
     parser.add_argument('--cmi', type=float, default=0.0, help='cmi')
     parser.add_argument('--prob', action='store_true', default=False, help='fedsr probabilistic or not')
