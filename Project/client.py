@@ -24,10 +24,11 @@ class Client:
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
         self.device = device
-        
-        self.r_mu = nn.Parameter(torch.zeros(args.num_classes, args.z_dim).to(self.device))
-        self.r_sigma = nn.Parameter(torch.ones(args.num_classes, args.z_dim).to(self.device))
-        self.C = nn.Parameter(torch.ones([]).to(self.device))
+
+        if self.args.model == "fedsr":
+            self.r_mu = nn.Parameter(torch.zeros(args.num_classes, args.z_dim).to(self.device))
+            self.r_sigma = nn.Parameter(torch.ones(args.num_classes, args.z_dim).to(self.device))
+            self.C = nn.Parameter(torch.ones([]).to(self.device))
 
 
     def __str__(self):
@@ -101,7 +102,8 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
         optimizer = optim.SGD(params=self.model.parameters(), lr=args.lr, momentum=args.m, weight_decay=args.wd)
-        optimizer.add_param_group({'params': [self.r_mu, self.r_sigma, self.C]})
+        if args.model == "fedsr":
+            optimizer.add_param_group({'params': [self.r_mu, self.r_sigma, self.C]})
 
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optimizer)
