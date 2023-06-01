@@ -21,10 +21,13 @@ class Client:
         self.test_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=False)
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=255)
+
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
         self.device = device
 
+        if self.args.model == "dann":
+            self.domain_criterion = nn.CrossEntropyLoss(ignore_index=255)
         if self.args.model == "fedsr":
             self.r_mu = nn.Parameter(torch.zeros(args.num_classes, args.z_dim).to(self.device))
             self.r_sigma = nn.Parameter(torch.ones(args.num_classes, args.z_dim).to(self.device))
@@ -46,7 +49,7 @@ class Client:
             return self.model(images)['out']
         elif self.args.model == 'resnet18':
             return self.model(images)
-        elif self.args.model == 'cnn' or 'fedsr': 
+        elif self.args.model == 'cnn' or self.args.model == 'fedsr' or self.args.model == 'dann':
             return self.model(images)
         raise NotImplementedError
 
@@ -62,33 +65,45 @@ class Client:
             labels = labels.to(self.device)
         
             # forward
-            z, (z_mu, z_sigma) = self.model.featurise(images, return_dist=True)
-            outputs = self.model.cls(z)
-            
+            if self.args.model == "fedsr":
+                z, (z_mu, z_sigma) = self.model.featurise(images, return_dist=True)
+                outputs = self.model.cls(z)
+
+                loss = self.criterion(outputs, labels)
+
+                if self.args.l2r != 0.0:  # 0.01 works quite well (as starting point)
+                    regL2R = z.norm(dim=1).mean()
+                    loss = loss + self.args.l2r * regL2R
+                if self.args.cmi != 0.0:
+                    r_sigma_softplus = F.softplus(self.r_sigma)
+                    r_mu = self.r_mu[labels]
+                    r_sigma = r_sigma_softplus[labels]
+                    z_mu_scaled = z_mu * self.C
+                    z_sigma_scaled = z_sigma * self.C
+                    regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
+                             (z_sigma_scaled ** 2 + (z_mu_scaled - r_mu) ** 2) / (2 * r_sigma ** 2) - 0.5
+                    regCMI = regCMI.sum(1).mean()
+                    loss = loss + self.args.cmi * regCMI
+
+            ### FORWARD PROCEDURE FOR DANN
+            elif self.args.model == "dann":
+                domain_labels = self.dataset.domain * torch.ones(len(labels))
+                outputs, domain_output = self.model(images)
+
+                loss_label = self.criterion(outputs, labels)
+                loss_domain = self.criterion(domain_output, domain_labels)
+                loss = loss_label + self.args.dann_w * loss_domain
+
+            else:
+               outputs = self.model(images)
+               loss = self.criterion(outputs, labels)
+
             #outputs = self.model(images)
 
-            loss = self.criterion(outputs, labels) # + L2 +
-            
-            if self.args.l2r != 0.0: #0.01 works quite well (as starting point)
-                regL2R = z.norm(dim=1).mean()
-                loss = loss + self.args.l2r*regL2R
-            if self.args.cmi != 0.0:
-                r_sigma_softplus = F.softplus(self.r_sigma)
-                r_mu = self.r_mu[labels]
-                r_sigma = r_sigma_softplus[labels]
-                z_mu_scaled = z_mu*self.C
-                z_sigma_scaled = z_sigma*self.C
-                regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
-                        (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
-                regCMI = regCMI.sum(1).mean()
-                loss = loss + self.args.cmi*regCMI
-            
+
             # backward
             optimizer.zero_grad()
             loss.backward()
-
-            #Clip norm
-            #torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
 
             # gradient descent or adam step
             optimizer.step()
