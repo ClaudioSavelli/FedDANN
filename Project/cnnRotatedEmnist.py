@@ -170,7 +170,7 @@ def read_l1o_emnist_dir(leftout):
             cdata = json.load(inf)
             #t = 0 
             for user, images in cdata['user_data'].items(): 
-                if(num_file != leftout):
+                if(num_file != leftout): # TODO: un po meh
                     train_data['x'] += images["x"]
                     train_data['y'] += images["y"]
                 else: 
@@ -242,8 +242,9 @@ def main():
         train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs, train_size=args.tf)
     
     elif args.dataset_selection == 'L1O': 
-        train_dataset, l10_dataset = read_l1o_emnist_dir(args.leftout)
+        train_dataset, l1o_dataset = read_l1o_emnist_dir(args.leftout)
         train_loader, validation_loader, test_loader = split_train_test(train_dataset, args.bs, train_size=args.tf)
+        l1o_loader = torch.utils.data.DataLoader(l1o_dataset, batch_size=args.bs, shuffle=True)
 
     model = My_CNN(imageDim,62).to(device)
 
@@ -273,7 +274,7 @@ def main():
             n = len(train_loader)
             sys.stdout.write('\r')
             j = (i + 1) / n
-            sys.stdout.write("[%-20s] %d%%" % ('='*int(20*j), 100*j))
+            sys.stdout.write("[%-20s] %s%%" % ('=' * int(20 * j),  f"{(100 * j):.4}"))
             sys.stdout.flush()
 
             data = data.to(device = device)
@@ -314,7 +315,8 @@ def main():
             wandb.log({name: v})
     print(metrics['test'])
 
-    check_accuracy(l10_dataset, model, metrics["l1O"])
+    if args.dataset_selection == 'L1O': 
+        check_accuracy(l1o_loader, model, metrics["l1O"])
 
     #To put data on wandb
     results = metrics['l1O'].get_results()

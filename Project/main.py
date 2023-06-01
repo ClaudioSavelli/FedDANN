@@ -61,7 +61,7 @@ def model_init(args):
     if args.model == 'fedsr':
         return FedSrNet(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset), args)
     if args.model == 'dann':
-        return DANN(get_dataset_image_dimension(), 6)
+        return DANN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset), 6)
     raise NotImplementedError
 
 
@@ -338,14 +338,15 @@ def initWandB(args):
             if args.model == 'fedsr':
                 project = "FinalRotatedFemnist"
                 name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
+                wandbConfig["leftout"] = args.leftout
             elif args.model == 'dann':
                 project = "FinalRotatedFemnist"
                 name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
-
+                wandbConfig["leftout"] = args.leftout
             else:
                 project = "FinalRotatedFemnist" 
                 name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}"
-    
+                wandbConfig["leftout"] = args.leftout
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(

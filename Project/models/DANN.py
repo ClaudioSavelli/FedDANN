@@ -62,14 +62,14 @@ class DANN(torch.nn.Module):
 
         ### Domain Regressor
         self.fc1_dann = torch.nn.Sequential(
-            torch.nn.Linear(1024, 128),
+            torch.nn.Linear(2048, 128),
             torch.nn.ReLU()
         )
 
 
         self.fc2_dann = torch.nn.Sequential(
             torch.nn.Linear(128, num_domains),
-            torch.nn.Softmax()
+            torch.nn.Softmax(dim=-1)
         )
 
         

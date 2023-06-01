@@ -39,6 +39,7 @@ def get_parser():
     parser.add_argument('--cmi', type=float, default=0.0, help='cmi')
     parser.add_argument('--prob', action='store_true', default=False, help='fedsr probabilistic or not')
     parser.add_argument('--z_dim', type=int, default=1024, help='dim of z')
+    
     parser.add_argument('--dann_w', type=float, default=0.0, help='weight loss of domain classifier')
 
     # Print / Computational arguments

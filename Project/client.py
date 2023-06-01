@@ -49,8 +49,10 @@ class Client:
             return self.model(images)['out']
         elif self.args.model == 'resnet18':
             return self.model(images)
-        elif self.args.model == 'cnn' or self.args.model == 'fedsr' or self.args.model == 'dann':
+        elif self.args.model == 'cnn' or self.args.model == 'fedsr':
             return self.model(images)
+        elif self.args.model == 'dann':
+            return self.model(images)[0]
         raise NotImplementedError
 
     def run_epoch(self, cur_epoch, optimizer):
@@ -87,7 +89,9 @@ class Client:
 
             ### FORWARD PROCEDURE FOR DANN
             elif self.args.model == "dann":
-                domain_labels = self.dataset.domain * torch.ones(len(labels))
+                domain_labels = self.dataset.domain * torch.ones(len(labels), dtype=labels.dtype)
+                domain_labels = domain_labels.to(self.device)
+
                 outputs, domain_output = self.model(images)
 
                 loss_label = self.criterion(outputs, labels)
@@ -117,7 +121,8 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
         optimizer = optim.SGD(params=self.model.parameters(), lr=args.lr, momentum=args.m, weight_decay=args.wd)
-        optimizer.add_param_group({'params': [self.r_mu, self.r_sigma, self.C]})
+        if args.model == "fedsr":
+            optimizer.add_param_group({'params': [self.r_mu, self.r_sigma, self.C]})
 
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer=optimizer)
