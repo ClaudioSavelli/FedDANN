@@ -37,6 +37,9 @@ class Femnist(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    def get_list_of_samples(self): 
+        return self.samples
+
     def set_domain(self, domain):
         self.domain = domain
 
