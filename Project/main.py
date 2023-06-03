@@ -115,8 +115,34 @@ class add_noise(object):
     def __repr__(self):
         return self.__class__.__name__+'()'
  
-
 def get_transforms_rotated(args):
+    if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
+        normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+        )
+
+        angles = [0, 15, 30, 45, 60, 75]
+        myAngleTransforms = []
+        for theta in angles:
+            t = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                transforms.ToTensor(),
+                normalize,
+            ])
+            myAngleTransforms.append(copy.deepcopy(t))
+
+        test_transforms = nptr.Compose([
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            normalize,
+        ])
+    else:
+        raise NotImplementedError
+    return myAngleTransforms, test_transforms
+
+def get_personal_transforms(args):
     if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
         normalize = transforms.Normalize(
         mean=0.1736,
@@ -128,6 +154,7 @@ def get_transforms_rotated(args):
         for theta in angles:
             if theta == 0:
                 t = transforms.Compose([
+                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     normalize,
                 ])
@@ -141,6 +168,7 @@ def get_transforms_rotated(args):
                 ])
             elif theta == 30:
                 t = transforms.Compose([
+                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     transforms.RandomInvert(p=1.0),
                     transforms.RandomRotation(degrees=(theta, theta), fill=(0,)),
@@ -155,6 +183,7 @@ def get_transforms_rotated(args):
                 ])
             elif theta == 60:
                 t = transforms.Compose([
+                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     add_noise(),
                     transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
@@ -162,6 +191,7 @@ def get_transforms_rotated(args):
                 ])
             elif theta == 75:
                 t = transforms.Compose([
+                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     transforms.RandomPerspective(distortion_scale=0.8, p=1.0, fill=1),
@@ -193,8 +223,13 @@ def apply_transforms(args, train_datasets, test_datasets):
 
     ### FOR ROTATED
     elif args.dataset_selection == 'rotated':
-        train_transform_list, test_transforms = get_transforms_rotated(args)
-
+        if args.transformations == 'r':
+            train_transform_list, test_transforms = get_transforms_rotated(args)
+        elif args.transformations == 'p':
+            train_transform_list, test_transforms = get_personal_transforms(args)
+        else: 
+            raise NotImplementedError
+        
         total_clients = 1002
         n_clients_per_angle = total_clients // 6
         for i, dataset in enumerate(train_datasets):
@@ -207,7 +242,12 @@ def apply_transforms(args, train_datasets, test_datasets):
 
     ### FOR L1O
     elif args.dataset_selection == 'L1O':
-        train_transform_list, test_transforms = get_transforms_rotated(args)
+        if args.transformations == 'r':
+            train_transform_list, test_transforms = get_transforms_rotated(args)
+        elif args.transformations == 'p':
+            train_transform_list, test_transforms = get_personal_transforms(args)
+        else: 
+            raise NotImplementedError
 
         total_clients = 1002
         n_clients_per_angle = total_clients // 6
@@ -420,6 +460,7 @@ def initWandB(args):
         "isNiid": args.niid,
         "dataset": args.dataset_selection,
         "model": args.model,
+        "transformation applierd": args.transformations,
         "num_rounds": args.num_rounds,
         "num_local_epochs": args.num_epochs,
         "clients_per_round": args.clients_per_round,
@@ -456,25 +497,25 @@ def initWandB(args):
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
                 project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
+                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
             elif args.model == 'dann':
                 project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.model}_w{args.dann_w}"
+                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
             else:
                 project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.model}"
+                name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
         elif args.dataset_selection == 'L1O':
             if args.model == 'fedsr':
                 project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
+                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
                 wandbConfig["leftout"] = args.leftout
             elif args.model == 'dann':
                 project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
+                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
                 wandbConfig["leftout"] = args.leftout
             else:
                 project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}"
+                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
                 wandbConfig["leftout"] = args.leftout
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
