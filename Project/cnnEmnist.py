@@ -57,7 +57,7 @@ def get_train_valid_loader(data_dir,
 
     # load the dataset
     train_set = datasets.EMNIST(
-        root=data_dir, train=True,split = 'byclass',
+        root=data_dir, train=True,split='byclass',
         download=True, transform=train_transform,
     )
 
@@ -90,7 +90,7 @@ def get_test_loader(data_dir,
     ])
 
     dataset = datasets.EMNIST(
-        root=data_dir, train=False, split = 'byclass',
+        root=data_dir, train=False, split='byclass',
         download=True, transform=transform,
     )
 
@@ -128,8 +128,8 @@ def check_accuracy(loader, model, metric):
 
     with torch.no_grad(): 
         for img, labels in loader: 
-            img = img.to(device = device)
-            labels = labels.to(device = device)
+            img = img.to(device=device)
+            labels = labels.to(device=device)
 
             outputs = model(img)
             update_metric(metric, outputs, labels)

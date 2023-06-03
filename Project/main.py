@@ -99,6 +99,23 @@ def get_transforms(args):
         raise NotImplementedError
     return train_transforms, test_transforms
 
+
+class add_noise(object):
+    def __call__(self, inputs, noise_factor=0.2):
+        """
+        :param img: (Tensor): Image 
+
+        :return: Noisy image (Tensor)
+        """
+        
+        noisy = inputs + torch.randn_like(inputs) * noise_factor
+        noisy = torch.clip(noisy, 0., 1.)
+        return noisy
+
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+ 
+
 def get_transforms_rotated(args):
     if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
         normalize = transforms.Normalize(
@@ -109,12 +126,47 @@ def get_transforms_rotated(args):
         angles = [0, 15, 30, 45, 60, 75]
         myAngleTransforms = []
         for theta in angles:
-            t = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
-                transforms.ToTensor(),
-                normalize,
-            ])
+            if theta == 0:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    normalize,
+                ])
+            elif theta == 15:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                    add_noise(),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 30:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomInvert(p=1.0),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(0,)),
+                    normalize,
+                ]) 
+            elif theta == 45:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.ColorJitter(brightness=0.9, contrast=0.9, saturation=0.9, hue=0.5),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 60:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    add_noise(),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 75:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    transforms.RandomPerspective(distortion_scale=0.8, p=1.0, fill=1),
+                    normalize,
+                ])
             myAngleTransforms.append(copy.deepcopy(t))
 
         test_transforms = nptr.Compose([
@@ -185,13 +237,12 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     random.shuffle(files)
-    if is_test_mode: files = np.random.choice(files, size = len(files)//6)
+    if is_test_mode: files = np.random.choice(files, size=len(files)//6)
 
-    i = 1
-    for f in files:
+    for i, f in enumerate(files):
         #Loading bar
         sys.stdout.write('\r')
-        sys.stdout.write("%d / %d" % (i, len(files)))
+        sys.stdout.write("%d / %d" % (i+1, len(files)))
         sys.stdout.flush()
         file_path = os.path.join(data_dir, f)
         
@@ -199,7 +250,6 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
             cdata = json.load(inf)
             for user, images in cdata['user_data'].items():    
                 data.append(Femnist(images, transform, user))
-        i += 1
     
     return data
 
@@ -329,7 +379,7 @@ def take_l1o_loader(args, model, device):
             data.append(Femnist(images, test_transforms, user))
         
         for ds in data:
-            clients.append(Client(args, ds, model, test_client = 1, device=device))
+            clients.append(Client(args, ds, model, test_client=1, device=device))
     return clients
 
 def set_metrics(args):
@@ -383,7 +433,7 @@ def initWandB(args):
         "l2r": args.l2r, 
         "cmi": args.cmi, 
         "z_dim": args.z_dim
-        }
+    }
 
 
     if args.client_selection == 'biased':
@@ -446,7 +496,7 @@ def main():
 
     initWandB(args)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = args.device
     print(device)
     torch.manual_seed(args.seed)
 
@@ -494,7 +544,7 @@ def main():
         i_ = np.random.randint(len(client.dataset))
         img, label = client.dataset[i_]
         img = np.array(img).reshape(28,28)
-        print("domain",i, "label",label)
+        print("domain", i, "label", label)
         plt.imshow(img, cmap="gray")
         plt.show()
 
