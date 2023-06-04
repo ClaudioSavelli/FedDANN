@@ -8,7 +8,6 @@ def get_parser():
     parser.add_argument('--dataset', type=str, default='femnist', choices=['idda', 'femnist'], required=False, help='dataset name')
     parser.add_argument('--test_mode', action='store_true', default=False,
                         help='Enable or disable test mode.')
-    parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu', help='cuda or cpu')
     parser.add_argument('--model', type=str, default='cnn', help='model name')
 
     # Federated learning arguments
@@ -35,6 +34,7 @@ def get_parser():
     # Domain generalization arguments
     parser.add_argument('--dataset_selection', type=str, default='default', choices=['default', 'rotated', 'L1O'], required=False, help='client selection')
     parser.add_argument('--leftout', type=int, default=-1, choices=[-1, 0, 1, 2, 3, 4, 5], help='angle index left out in l1O')
+    parser.add_argument('--transformations', type=str, default='r', choices=['r', 'p'], required=False, help='type of transformation applied')
     parser.add_argument('--l2r', type=float, default=0.0, help='l2')
     parser.add_argument('--cmi', type=float, default=0.0, help='cmi')
     parser.add_argument('--prob', action='store_true', default=False, help='fedsr probabilistic or not')

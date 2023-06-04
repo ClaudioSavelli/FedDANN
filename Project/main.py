@@ -14,6 +14,7 @@ from torchvision.models import resnet18
 import datasets.ss_transforms as sstr
 import datasets.np_transforms as nptr
 
+import cv2
 import torchvision.transforms as transforms
 
 from torch import nn
@@ -99,6 +100,65 @@ def get_transforms(args):
         raise NotImplementedError
     return train_transforms, test_transforms
 
+
+class add_noise(object):
+    def __call__(self, inputs, noise_factor=0.15):
+        """
+        :param img: (Tensor): Image 
+
+        :return: Noisy image (Tensor)
+        """
+        
+        noisy = inputs + torch.randn_like(inputs) * noise_factor
+        noisy = torch.clip(noisy, 0., 1.)
+        return noisy
+
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+    
+
+class add_random_boxes(object):
+    def __call__(self, img, n_k = 10, size = 3):
+        h,w = size, size
+        img = np.asarray(img)
+        img_size = 28
+        for k in range(n_k):
+            y,x = np.random.randint(0,img_size-w,(2,))
+            img[y:y+h,x:x+w] = 0
+        img = torch.from_numpy(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+    
+class MotionBlur(object):
+    def __init__(self, size = 28):
+        self.size = size
+        self.kernel1 = np.ones((3, 3), np.float32)/10
+        
+    def __call__(self, image):
+        image = cv2.filter2D(src = np.array(image), ddepth = -1, kernel = self.kernel1)
+        image = torch.from_numpy(image)
+        return image
+    
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+    
+class EdgeDetect(object):
+    def __init__(self, size = 28):
+        self.t_lower = 50  # Lower Threshold
+        self.t_upper = 150  # Upper threshold
+        
+    def __call__(self, image):
+        image = cv2.Canny(np.array(image), self.t_lower, self.t_upper)
+        print(type(image))
+        image = torch.from_numpy(image)
+        return image
+    
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+  
+ 
 def get_transforms_rotated(args):
     if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
         normalize = transforms.Normalize(
@@ -126,6 +186,68 @@ def get_transforms_rotated(args):
         raise NotImplementedError
     return myAngleTransforms, test_transforms
 
+def get_personal_transforms(args):
+    if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
+        normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+        )
+
+        angles = [0, 15, 30, 45, 60, 75]
+        myAngleTransforms = []
+        for theta in angles:
+            if theta == 0:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    normalize,
+                ])
+            elif theta == 15:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    MotionBlur(), 
+                    #transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                    #add_noise(),
+                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 30:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomInvert(p=1.0),
+                    normalize,
+                ]) 
+            elif theta == 45:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    #transforms.ColorJitter(brightness=3, contrast=1.0, saturation=1.0, hue=0.5),
+                    #transforms.RandomAffine(degrees=0, translate=(0.3,0.3), scale=(0.8,1.2), fill=1),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 60:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    add_noise(),
+                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 75:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomAffine(degrees=0, translate=(0.25,0.25), scale=(0.8,1.2), fill=1),
+                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            myAngleTransforms.append(copy.deepcopy(t))
+
+        test_transforms = nptr.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ])
+    else:
+        raise NotImplementedError
+    return myAngleTransforms, test_transforms
+
 def apply_transforms(args, train_datasets, test_datasets):
     l1o_datasets = []
 
@@ -141,8 +263,13 @@ def apply_transforms(args, train_datasets, test_datasets):
 
     ### FOR ROTATED
     elif args.dataset_selection == 'rotated':
-        train_transform_list, test_transforms = get_transforms_rotated(args)
-
+        if args.transformations == 'r':
+            train_transform_list, test_transforms = get_transforms_rotated(args)
+        elif args.transformations == 'p':
+            train_transform_list, test_transforms = get_personal_transforms(args)
+        else: 
+            raise NotImplementedError
+        
         total_clients = 1002
         n_clients_per_angle = total_clients // 6
         for i, dataset in enumerate(train_datasets):
@@ -155,7 +282,12 @@ def apply_transforms(args, train_datasets, test_datasets):
 
     ### FOR L1O
     elif args.dataset_selection == 'L1O':
-        train_transform_list, test_transforms = get_transforms_rotated(args)
+        if args.transformations == 'r':
+            train_transform_list, test_transforms = get_transforms_rotated(args)
+        elif args.transformations == 'p':
+            train_transform_list, test_transforms = get_personal_transforms(args)
+        else: 
+            raise NotImplementedError
 
         total_clients = 1002
         n_clients_per_angle = total_clients // 6
@@ -183,13 +315,12 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     random.shuffle(files)
-    if is_test_mode: files = np.random.choice(files, size = len(files)//6)
+    if is_test_mode: files = np.random.choice(files, size=len(files)//3)
 
-    i = 1
-    for f in files:
+    for i, f in enumerate(files):
         #Loading bar
         sys.stdout.write('\r')
-        sys.stdout.write("%d / %d" % (i, len(files)))
+        sys.stdout.write("%d / %d" % (i+1, len(files)))
         sys.stdout.flush()
         file_path = os.path.join(data_dir, f)
         
@@ -238,6 +369,25 @@ def get_datasets(args):
 
     return train_datasets, test_datasets
 
+def take_l1o_loader(args, model, device): 
+    train_transforms, test_transforms = get_transforms(args)
+    data_dir = os.path.join('data', 'RotatedFEMNIST')
+    data = []
+    clients = []
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+    f = files[args.leftout]
+    print("\nFile leftover: ", f)
+    file_path = os.path.join(data_dir, f)
+    
+    with open(file_path, 'r') as inf:
+        cdata = json.load(inf)
+        for user, images in cdata['user_data'].items():    
+            data.append(Femnist(images, test_transforms, user))
+        
+        for ds in data:
+            clients.append(Client(args, ds, model, test_client=1, device=device))
+    return clients
 
 def set_metrics(args):
     num_classes = get_dataset_num_classes(args.dataset)
@@ -277,6 +427,7 @@ def initWandB(args):
         "isNiid": args.niid,
         "dataset": args.dataset_selection,
         "model": args.model,
+        "transformation applierd": args.transformations,
         "num_rounds": args.num_rounds,
         "num_local_epochs": args.num_epochs,
         "clients_per_round": args.clients_per_round,
@@ -291,7 +442,7 @@ def initWandB(args):
         "l2r": args.l2r, 
         "cmi": args.cmi,
         "z_dim": args.z_dim
-        }
+    }
 
 
     if args.client_selection == 'biased':
@@ -313,28 +464,56 @@ def initWandB(args):
                 name = f"{'niid' if args.niid else 'iid'}_sm{args.sm}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
-                project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
+                else:     
+                    project = "FinalRotatedFemnist" 
+                    name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
             elif args.model == 'dann':
-                project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.model}_w{args.dann_w}"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                else:     
+                    project = "FinalRotatedFemnist"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
             else:
-                project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.model}"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
+                else:  
+                    project = "FinalRotatedFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
         elif args.dataset_selection == 'L1O':
             if args.model == 'fedsr':
-                project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
-                wandbConfig["leftout"] = args.leftout
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
+                    wandbConfig["leftout"] = args.leftout
+                else:  
+                    project = "FinalRotatedFemnist"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
+                    wandbConfig["leftout"] = args.leftout
             elif args.model == 'dann':
-                project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}_w{args.dann_w if not args.dann_decay else 'decay'}"
-                wandbConfig["leftout"] = args.leftout 
-                wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w if not args.dann_decay else 'decay'}"
+                    wandbConfig["leftout"] = args.leftout
+                    wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
+                else:  
+                    project = "FinalRotatedFemnist"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w if not args.dann_decay else 'decay'}"
+                    wandbConfig["leftout"] = args.leftout
+                    wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
-                project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.model}_leftout{args.leftout}"
-                wandbConfig["leftout"] = args.leftout
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
+                    wandbConfig["leftout"] = args.leftout
+                else: 
+                    project = "FinalRotatedFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
+                    wandbConfig["leftout"] = args.leftout
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
@@ -383,25 +562,25 @@ def main():
     print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
 
-    # for i in range(6):
-    #     if i == args.leftout: continue
+    '''
+    for i in range(6):
+        if i == args.leftout: continue
+        for multipl in range(10): 
+            client = None
+            while client == None:
+                client = np.random.choice(train_clients)
+                if client.dataset.domain != i:
+                    client = None
 
+            i_ = np.random.randint(len(client.dataset))
+            img, label = client.dataset[i_]
+            img = np.array(img).reshape(28,28)
+            print("domain", i, "label", label)
+            plt.imshow(img, cmap="gray")
+            plt.show()
 
-    #     client = None
-    #     while client == None:
-    #         client = np.random.choice(train_clients)
-    #         if client.dataset.domain != i:
-    #             client = None
-
-    #     i_ = np.random.randint(len(client.dataset))
-    #     img, label = client.dataset[i_]
-    #     img = np.array(img).reshape(28,28)
-    #     print("domain",i, "label",label)
-    #     plt.imshow(img, cmap="gray")
-    #     plt.show()
-
-    # input()
-
+    input()
+    '''
 
     if args.dataset_selection == 'L1O': 
         _ , l1o_clients = gen_clients(args, [], l1o_datasets, model, device)
