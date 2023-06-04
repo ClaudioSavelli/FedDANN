@@ -68,8 +68,8 @@ class FedSrNet(torch.nn.Module):
         self.cls = self.fc3
         # self.cls = nn.Linear(1024, self.num_classes)
 
-        self.net.to(args.device)
-        self.cls.to(args.device)
+        self.net.to("cuda")
+        self.cls.to("cuda")
         self.model = nn.Sequential(self.net, self.cls)
         
         
