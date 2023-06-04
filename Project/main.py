@@ -234,7 +234,7 @@ def get_personal_transforms(args):
             elif theta == 75:
                 t = transforms.Compose([
                     transforms.ToTensor(),
-                    transforms.RandomAffine(degrees=0, translate=(0,0.5), scale=(0.8,1.2), fill=1),
+                    transforms.RandomAffine(degrees=0, translate=(0.25,0.25), scale=(0.8,1.2), fill=1),
                     #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
@@ -317,7 +317,7 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     random.shuffle(files)
-    if is_test_mode: files = np.random.choice(files, size=len(files)//6)
+    if is_test_mode: files = np.random.choice(files, size=len(files)//3)
 
     for i, f in enumerate(files):
         #Loading bar
@@ -536,27 +536,54 @@ def initWandB(args):
                 name = f"{'niid' if args.niid else 'iid'}_sm{args.sm}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
-                project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
+                else:     
+                    project = "FinalRotatedFemnist" 
+                    name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
             elif args.model == 'dann':
-                project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                else:     
+                    project = "FinalRotatedFemnist"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
             else:
-                project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
+                else:  
+                    project = "FinalRotatedFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
         elif args.dataset_selection == 'L1O':
             if args.model == 'fedsr':
-                project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
-                wandbConfig["leftout"] = args.leftout
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
+                    wandbConfig["leftout"] = args.leftout
+                else:  
+                    project = "FinalRotatedFemnist"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
+                    wandbConfig["leftout"] = args.leftout
             elif args.model == 'dann':
-                project = "FinalRotatedFemnist"
-                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
-                wandbConfig["leftout"] = args.leftout
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
+                    wandbConfig["leftout"] = args.leftout
+                else:  
+                    project = "FinalRotatedFemnist"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w}"
+                    wandbConfig["leftout"] = args.leftout
             else:
-                project = "FinalRotatedFemnist" 
-                name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
-                wandbConfig["leftout"] = args.leftout
+                if args.transformations == 'p': 
+                    project = "PersonalRotationsFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
+                    wandbConfig["leftout"] = args.leftout
+                else: 
+                    project = "FinalRotatedFemnist" 
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
+                    wandbConfig["leftout"] = args.leftout
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
