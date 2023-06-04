@@ -1,3 +1,5 @@
+import copy
+import random
 import numpy as np
 import torch 
 import torch.nn as nn 
@@ -7,6 +9,7 @@ import torchvision.transforms as transforms
 from models.cnn1 import My_CNN
 from utils.stream_metrics import StreamClsMetrics
 
+import datasets.np_transforms as nptr
 from datasets.femnist import Femnist
 
 from utils.args import get_parser
@@ -44,121 +47,80 @@ def update_metric(metric, outputs, labels):
     prediction = prediction.cpu().numpy()
     metric.update(labels, prediction)
 
-def get_train_valid_loader(data_dir,
-                           batch_size,
-                           valid_size=0.1,
-                           shuffle=True):
-
+def get_transforms_rotated(args):
+    
     normalize = transforms.Normalize(
-        mean=0.1736,
-        std=0.3248,
+    mean=0.1736,
+    std=0.3248,
     )
 
-    # define transforms
-    train_transform = transforms.Compose([
+    angles = [0, 15, 30, 45, 60, 75]
+    myAngleTransforms = []
+    for theta in angles:
+        t = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
             transforms.ToTensor(),
-            normalize
+            normalize,
         ])
+        myAngleTransforms.append(copy.deepcopy(t))
 
-    # load the dataset
-    train_set = datasets.EMNIST(
-        root=data_dir, train=True,split = 'byclass',
-        download=True, transform=train_transform,
-    )
-
-    entire_trainset = torch.utils.data.DataLoader(train_set, shuffle=shuffle)
-
-    split_train_size = int((1-valid_size)*(len(entire_trainset))) 
-    split_valid_size = len(entire_trainset) - split_train_size 
-
-    train_set, val_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size]) 
-
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    valid_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=shuffle)
-
-    return (train_loader, valid_loader)
-
-def read_rotated_emnist_dir():
-        data_dir = os.path.join('data', 'RotatedFEMNIST')
-        
-        normalize = transforms.Normalize(
-        mean=0.1736,
-        std=0.3248,
-    )
-
-        # define transforms
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            normalize
-        ])
-
-        all_data = {}
-        all_data['x'] = []
-        all_data['y'] = []
-        files = os.listdir(data_dir)
-        files = [f for f in files if f.endswith('.json')]
-
-        i = 1
-        for f in files:
-            #Loading bar
-            sys.stdout.write('\r')
-            sys.stdout.write("%d / %d" % (i, len(files)))
-            sys.stdout.flush()
-            file_path = os.path.join(data_dir, f)
-            
-            with open(file_path, 'r') as inf:
-                cdata = json.load(inf)
-                #t = 0 
-                for user, images in cdata['user_data'].items():   
-                    all_data['x'] += images["x"]
-                    all_data['y'] += images["y"]
-            i += 1
-        
-        return Femnist(all_data, transform, "Centralised User")
-
-def split_train_test(entire_dataset, batch_size, train_size = 0.8, shuffle = True):
-    split_train_size = int((train_size)*(len(entire_dataset))) 
-    split_test_size = len(entire_dataset) - split_train_size 
-
-    train_set, test_set = torch.utils.data.random_split(entire_dataset, [split_train_size, split_test_size])
-
-    split_train_size = int((train_size)*(len(train_set))) 
-    split_valid_size = len(train_set) - split_train_size 
-    train_set, valid_set = torch.utils.data.random_split(train_set, [split_train_size, split_valid_size])
-
-
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
-    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=shuffle)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=shuffle)
-
-    return (train_loader, validation_loader, test_loader)
-
-def read_l1o_emnist_dir(leftout):
-    data_dir = os.path.join('data', 'RotatedFEMNIST')
-        
-    normalize = transforms.Normalize(
-        mean=0.1736,
-        std=0.3248,
-    )
-
-    # define transforms
-    transform = transforms.Compose([
+    test_transforms = nptr.Compose([
+        transforms.ToPILImage(),
         transforms.ToTensor(),
-        normalize
+        normalize,
     ])
 
-    train_data = {}
-    train_data['x'] = []
-    train_data['y'] = []
-    test_data = {}
-    test_data['x'] = []
-    test_data['y'] = []
-    
+    return myAngleTransforms, test_transforms
+
+def apply_transforms(args, train_datasets, test_datasets):
+    l1o_datasets = []
+
+    ### FOR ROTATED
+    if args.dataset_selection == 'rotated':
+        train_transform_list, test_transforms = get_transforms_rotated(args)
+
+        total_clients = 1002
+        n_clients_per_angle = total_clients // 6
+        for i, dataset in enumerate(train_datasets):
+            transform_to_do = i // n_clients_per_angle
+            dataset.set_transform(train_transform_list[ transform_to_do if i < total_clients else 0 ])
+
+        for dataset in test_datasets:
+            dataset.set_transform(test_transforms)
+
+    ### FOR L1O
+    elif args.dataset_selection == 'L1O':
+        train_transform_list, test_transforms = get_transforms_rotated(args)
+
+        total_clients = 1002
+        n_clients_per_angle = total_clients // 6
+        new_train_datasets = []
+
+        for i, dataset in enumerate(train_datasets):
+            transform_to_do = i // n_clients_per_angle
+            dataset.set_transform(train_transform_list[ transform_to_do if i < total_clients else 0 ])
+
+            if transform_to_do == args.leftout:
+                l1o_datasets.append(dataset)
+            else:
+                new_train_datasets.append(dataset)
+        
+        for dataset in test_datasets:
+            dataset.set_transform(test_transforms)
+
+        train_datasets = new_train_datasets
+
+    return train_datasets, test_datasets, l1o_datasets
+
+def my_read_femnist_dir(data_dir, is_test_mode):
+    data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
+    random.shuffle(files)
+    if is_test_mode: files = np.random.choice(files, size = len(files)//12)
 
     i = 1
-    num_file = 0
     for f in files:
         #Loading bar
         sys.stdout.write('\r')
@@ -168,20 +130,54 @@ def read_l1o_emnist_dir(leftout):
         
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
-            #t = 0 
-            for user, images in cdata['user_data'].items(): 
-                if(num_file != leftout): # TODO: un po meh
-                    train_data['x'] += images["x"]
-                    train_data['y'] += images["y"]
-                else: 
-                    test_data['x'] += images["x"]
-                    test_data['y'] += images["y"]
-
+            for user, images in cdata['user_data'].items():    
+                data.append(Femnist(images, None, user))
         i += 1
-        num_file += 1
     
-    return Femnist(train_data, transform, "Centralised Train User"), \
-            Femnist(test_data, transform, "Centralised Test User")
+    return data
+
+def unify_clients(dataset):
+    all_data = {}
+    all_data['x'] = []
+    all_data['y'] = []
+    i = 0
+
+    for client in dataset: 
+        list_ = client.get_list_of_samples()
+
+        for img, label in list_:
+            all_data['x'].append(img)
+            all_data['y'].append(label)
+        i += 1
+    
+    return Femnist(all_data, None, "Centralised User")
+
+def my_read_femnist_data(train_data_dir, test_data_dir, is_test_mode):
+    return my_read_femnist_dir(train_data_dir, is_test_mode), \
+           my_read_femnist_dir(test_data_dir, is_test_mode)
+
+def get_datasets(args):
+
+    train_datasets = []
+
+    niid = args.niid
+    train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
+    test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
+    train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, args.test_mode)
+
+    return train_datasets, test_datasets
+
+def generate_data_loaders(train_dataset, test_dataset, batch_size, train_size = 0.8, shuffle = True):
+
+    split_train_size = int((train_size)*(len(train_dataset))) 
+    split_valid_size = len(train_dataset) - split_train_size 
+    train_set, valid_set = torch.utils.data.random_split(train_dataset, [split_train_size, split_valid_size])
+
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
+    validation_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=shuffle)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle)
+
+    return (train_loader, validation_loader, test_loader)
 
 def check_accuracy(loader, model, metric):
 
@@ -205,15 +201,17 @@ def main():
     mode_selected = "disabled" if args.test_mode else "online"
 
     if args.dataset_selection == 'rotated': 
-        name = f"{args.dataset_selection}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+        project = "FinalRotatedFemnist"
+        name = f"Emnist_{args.dataset_selection}"
     elif args.dataset_selection == 'L1O': 
-        name = f"{args.dataset_selection}_leftout{args.leftout}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+        project = "FinalRotatedFemnist"
+        name = f"Emnist_{args.dataset_selection}_leftout{args.leftout}"
 
     wandb.init(
         mode=mode_selected,
 
         # set the wandb project where this run will be logged
-        project="NewRotatedEmnistBenchmark",
+        project=project,
         name = name, 
         
         # track hyperparameters and run metadata
@@ -225,6 +223,7 @@ def main():
         "momentum": args.m, 
         "batch_size": args.bs,
         "train_fraction": args.tf,
+        "leftout": args.leftout, 
         "Optimiser": "SGD",
         "criterion": "nn.CrossEntropyLoss()",
         "p": p,
@@ -236,15 +235,17 @@ def main():
 
     set_seed(args.seed)
 
-    if args.dataset_selection == 'rotated': 
-        dataset = read_rotated_emnist_dir()
+    train_datasets, test_datasets = get_datasets(args)
+    train_datasets, test_datasets, l1o_datasets = apply_transforms(args, train_datasets, test_datasets)
 
-        train_loader, validation_loader, test_loader = split_train_test(dataset, args.bs, train_size=args.tf)
-    
-    elif args.dataset_selection == 'L1O': 
-        train_dataset, l1o_dataset = read_l1o_emnist_dir(args.leftout)
-        train_loader, validation_loader, test_loader = split_train_test(train_dataset, args.bs, train_size=args.tf)
-        l1o_loader = torch.utils.data.DataLoader(l1o_dataset, batch_size=args.bs, shuffle=True)
+    train_datasets = unify_clients(train_datasets)
+    test_datasets = unify_clients(test_datasets)
+
+    train_loader, validation_loader, test_loader = generate_data_loaders(train_datasets, test_datasets, args.bs)
+
+    if args.dataset_selection == 'L1O': 
+        l1o_datasets = unify_clients(l1o_datasets)
+        l1o_loader = torch.utils.data.DataLoader(l1o_datasets, batch_size=args.bs, shuffle=True)
 
     model = My_CNN(imageDim,62).to(device)
 
