@@ -143,10 +143,10 @@ def unify_clients(dataset):
     i = 0
 
     for client in dataset: 
-        list = client.get_list_of_samples()
+        list_ = client.get_list_of_samples()
 
-        for img, label in list:
-            all_data['x'] += img
+        for img, label in list_:
+            all_data['x'].append(img)
             all_data['y'].append(label)
         i += 1
     
