@@ -1,6 +1,6 @@
 import copy
 import torch
-
+import numpy as np
 from torch import optim, nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -16,6 +16,8 @@ class Client:
         self.dataset = dataset
         self.name = self.dataset.client_name
         self.model = model
+        self.r = 0
+
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=False)
@@ -91,12 +93,18 @@ class Client:
             elif self.args.model == "dann":
                 domain_labels = self.dataset.domain * torch.ones(len(labels), dtype=labels.dtype)
                 domain_labels = domain_labels.to(self.device)
-
                 outputs, domain_output = self.model(images)
+
+                if self.args.dann_decay:
+                    gamma = 10  
+                    p = self.r / self.args.num_rounds
+                    lambda_p = 2 / (1 + np.exp(-gamma * p)) - 1
+                else:
+                    lambda_p = self.args.dann_w
 
                 loss_label = self.criterion(outputs, labels)
                 loss_domain = self.criterion(domain_output, domain_labels)
-                loss = loss_label + self.args.dann_w * loss_domain
+                loss = loss_label + lambda_p * loss_domain
 
             else:
                outputs = self.model(images)
@@ -163,3 +171,6 @@ class Client:
         local_loss = local_loss / len(self.dataset)
 
         return local_loss
+
+    def set_r(self, r):
+        self.r = r

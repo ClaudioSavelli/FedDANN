@@ -40,8 +40,10 @@ def get_parser():
     parser.add_argument('--prob', action='store_true', default=False, help='fedsr probabilistic or not')
     parser.add_argument('--z_dim', type=int, default=1024, help='dim of z')
     
+    ## DANN arguments
     parser.add_argument('--dann_w', type=float, default=0.0, help='weight loss of domain classifier')
-
+    parser.add_argument('--dann_decay', action='store_true', default=False,
+                        help='Enable DANN weight decay')
     # Print / Computational arguments
     #parser.add_argument('--clip', type=float, default=0.5, help='clipping gradient')
 

@@ -199,6 +199,7 @@ class Server:
             # Update parameters
             for c in clients:
                 c.change_model(self.model) #with deepcopy
+                c.set_r(r)
 
             updates = self.train_round(clients, r, args)
 
