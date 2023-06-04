@@ -8,7 +8,6 @@ def get_parser():
     parser.add_argument('--dataset', type=str, default='femnist', choices=['idda', 'femnist'], required=False, help='dataset name')
     parser.add_argument('--test_mode', action='store_true', default=False,
                         help='Enable or disable test mode.')
-    parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu', help='cuda or cpu')
     parser.add_argument('--model', type=str, default='cnn', help='model name')
 
     # Federated learning arguments

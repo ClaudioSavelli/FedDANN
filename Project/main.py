@@ -14,6 +14,7 @@ from torchvision.models import resnet18
 import datasets.ss_transforms as sstr
 import datasets.np_transforms as nptr
 
+import cv2
 import torchvision.transforms as transforms
 
 from torch import nn
@@ -101,7 +102,7 @@ def get_transforms(args):
 
 
 class add_noise(object):
-    def __call__(self, inputs, noise_factor=0.2):
+    def __call__(self, inputs, noise_factor=0.15):
         """
         :param img: (Tensor): Image 
 
@@ -114,6 +115,49 @@ class add_noise(object):
 
     def __repr__(self):
         return self.__class__.__name__+'()'
+    
+
+class add_random_boxes(object):
+    def __call__(self, img, n_k = 10, size = 3):
+        h,w = size, size
+        img = np.asarray(img)
+        img_size = 28
+        for k in range(n_k):
+            y,x = np.random.randint(0,img_size-w,(2,))
+            img[y:y+h,x:x+w] = 0
+        img = torch.from_numpy(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+    
+class MotionBlur(object):
+    def __init__(self, size = 28):
+        self.size = size
+        self.kernel1 = np.ones((3, 3), np.float32)/10
+        
+    def __call__(self, image):
+        image = cv2.filter2D(src = np.array(image), ddepth = -1, kernel = self.kernel1)
+        image = torch.from_numpy(image)
+        return image
+    
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+    
+class EdgeDetect(object):
+    def __init__(self, size = 28):
+        self.t_lower = 50  # Lower Threshold
+        self.t_upper = 150  # Upper threshold
+        
+    def __call__(self, image):
+        image = cv2.Canny(np.array(image), self.t_lower, self.t_upper)
+        print(type(image))
+        image = torch.from_numpy(image)
+        return image
+    
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+  
  
 def get_transforms_rotated(args):
     if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
@@ -154,53 +198,49 @@ def get_personal_transforms(args):
         for theta in angles:
             if theta == 0:
                 t = transforms.Compose([
-                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     normalize,
                 ])
             elif theta == 15:
                 t = transforms.Compose([
                     transforms.ToTensor(),
-                    transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-                    add_noise(),
-                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    MotionBlur(), 
+                    #transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                    #add_noise(),
+                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             elif theta == 30:
                 t = transforms.Compose([
-                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     transforms.RandomInvert(p=1.0),
-                    transforms.RandomRotation(degrees=(theta, theta), fill=(0,)),
                     normalize,
                 ]) 
             elif theta == 45:
                 t = transforms.Compose([
                     transforms.ToTensor(),
-                    transforms.ColorJitter(brightness=0.9, contrast=0.9, saturation=0.9, hue=0.5),
+                    #transforms.ColorJitter(brightness=3, contrast=1.0, saturation=1.0, hue=0.5),
+                    #transforms.RandomAffine(degrees=0, translate=(0.3,0.3), scale=(0.8,1.2), fill=1),
                     transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             elif theta == 60:
                 t = transforms.Compose([
-                    transforms.ToPILImage(),
                     transforms.ToTensor(),
                     add_noise(),
-                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             elif theta == 75:
                 t = transforms.Compose([
-                    transforms.ToPILImage(),
                     transforms.ToTensor(),
-                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
-                    transforms.RandomPerspective(distortion_scale=0.8, p=1.0, fill=1),
+                    transforms.RandomAffine(degrees=0, translate=(0,0.5), scale=(0.8,1.2), fill=1),
+                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             myAngleTransforms.append(copy.deepcopy(t))
 
         test_transforms = nptr.Compose([
-            transforms.ToPILImage(),
             transforms.ToTensor(),
             normalize,
         ])
@@ -537,7 +577,7 @@ def main():
 
     initWandB(args)
 
-    device = args.device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print(device)
     torch.manual_seed(args.seed)
 
@@ -572,22 +612,21 @@ def main():
     print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
 
-
     for i in range(6):
         if i == args.leftout: continue
+        for multipl in range(10): 
+            client = None
+            while client == None:
+                client = np.random.choice(train_clients)
+                if client.dataset.domain != i:
+                    client = None
 
-        client = None
-        while client == None:
-            client = np.random.choice(train_clients)
-            if client.dataset.domain != i:
-                client = None
-
-        i_ = np.random.randint(len(client.dataset))
-        img, label = client.dataset[i_]
-        img = np.array(img).reshape(28,28)
-        print("domain", i, "label", label)
-        plt.imshow(img, cmap="gray")
-        plt.show()
+            i_ = np.random.randint(len(client.dataset))
+            img, label = client.dataset[i_]
+            img = np.array(img).reshape(28,28)
+            print("domain", i, "label", label)
+            plt.imshow(img, cmap="gray")
+            plt.show()
 
     input()
 
