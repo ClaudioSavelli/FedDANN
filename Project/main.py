@@ -177,8 +177,6 @@ def apply_transforms(args, train_datasets, test_datasets):
         train_datasets = new_train_datasets
 
     return train_datasets, test_datasets, l1o_datasets
-            
-
 
 def my_read_femnist_dir(data_dir, transform, is_test_mode):
     data = []
@@ -202,29 +200,6 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
         i += 1
     
     return data
-
-# def my_read_femnist_dir_rotated(data_dir, transform): #read all the files
-#     data = []
-#     files = os.listdir(data_dir)
-#     files = [f for f in files if f.endswith('.json')]
-
-#     num_file = 0
-#     for i, f in enumerate(files):
-#         #Loading bar
-#         sys.stdout.write('\r')
-#         sys.stdout.write("%d / %d" % (i, len(files)))
-#         sys.stdout.flush()
-#         file_path = os.path.join(data_dir, f)
-        
-#         with open(file_path, 'r') as inf:
-#             cdata = json.load(inf)
-#             data.append([])
-#             for user, images in cdata['user_data'].items():    
-#                 data[num_file].append(Femnist(images, transform, user))
-#                 data[num_file][-1].set_domain(i if i < 6 else 0)
-#             num_file += 1
-
-#     return data
 
 def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
     return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), \
@@ -263,74 +238,6 @@ def get_datasets(args):
 
     return train_datasets, test_datasets
 
-# def get_datasets_rotated(args):
-
-#     #Normally it's 0.8, but considering that at the end we add 1000 clients manually in the train we re-evaluated the division number to keep it coherent
-#     const_division = 0.72
-
-#     train_datasets = []
-#     train_transforms, test_transforms = get_transforms(args)
-
-#     if args.dataset == 'femnist':
-#         full_data_dir = os.path.join('data', 'RotatedFEMNIST')
-#         full_datasets_lists = my_read_femnist_dir_rotated(full_data_dir, train_transforms)
-#         print("\nNumero di file roc: ", len(full_datasets_lists[6:]))
-#         print("Numero di file rotation: ", len(full_datasets_lists[:6]))
-
-#         ### Se dobbiamo solo far rotated
-#         if args.dataset_selection == 'rotated':
-#             all_data = []
-#             for domain in full_datasets_lists[6:]:
-#                 all_data.extend(domain)
-            
-#             random.shuffle(all_data)
-#             train_datasets = all_data[:int(len(all_data)*const_division)]
-#             test_datasets = all_data[int(len(all_data)*const_division):]
-
-#             for domain in full_datasets_lists[:6]: 
-#                 train_datasets.extend(domain)
-            
-#             random.shuffle(train_datasets)
-            
-#         elif args.dataset_selection == 'L1O':
-#             all_data = []
-#             for domain in full_datasets_lists[6:]:
-#                 all_data.extend(domain)
-            
-#             random.shuffle(all_data)
-#             train_datasets = all_data[:int(len(all_data)*const_division)]
-#             test_datasets = all_data[int(len(all_data)*const_division):]
-
-#             for i, domain in enumerate(full_datasets_lists[:6]): 
-#                 if i != args.leftout:
-#                     train_datasets.extend(domain)
-            
-#             random.shuffle(train_datasets)
-
-#     else:
-#         raise NotImplementedError
-
-#     return train_datasets, test_datasets
-
-# def take_l1o_loader(args, model, device): 
-#     train_transforms, test_transforms = get_transforms(args)
-#     data_dir = os.path.join('data', 'RotatedFEMNIST')
-#     data = []
-#     clients = []
-#     files = os.listdir(data_dir)
-#     files = [f for f in files if f.endswith('.json')]
-#     f = files[args.leftout]
-#     print("\nFile leftover: ", f)
-#     file_path = os.path.join(data_dir, f)
-    
-#     with open(file_path, 'r') as inf:
-#         cdata = json.load(inf)
-#         for user, images in cdata['user_data'].items():    
-#             data.append(Femnist(images, test_transforms, user))
-        
-#         for ds in data:
-#             clients.append(Client(args, ds, model, test_client = 1, device=device))
-#     return clients
 
 def set_metrics(args):
     num_classes = get_dataset_num_classes(args.dataset)
@@ -476,9 +383,9 @@ def main():
     print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
 
-
     # for i in range(6):
     #     if i == args.leftout: continue
+
 
     #     client = None
     #     while client == None:
@@ -494,7 +401,6 @@ def main():
     #     plt.show()
 
     # input()
-
 
 
     if args.dataset_selection == 'L1O': 
