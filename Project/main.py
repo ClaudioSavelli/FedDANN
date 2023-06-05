@@ -448,11 +448,11 @@ def initWandB(args):
             elif args.model == 'dann':
                 if args.transformations == 'p': 
                     project = "PersonalRotationsFemnist" 
-                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
                 else:     
                     project = "FinalRotatedFemnist"
-                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                    name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
                 if args.transformations == 'p': 
