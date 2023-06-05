@@ -435,6 +435,8 @@ def initWandB(args):
             if args.sm != 0: 
                 project = "Server Momentum Femnist"
                 name = f"{'niid' if args.niid else 'iid'}_sm{args.sm}_cr{args.clients_per_round}_epochs{args.num_epochs}_lr{args.lr}"
+
+
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
                 if args.transformations == 'p': 
@@ -447,9 +449,11 @@ def initWandB(args):
                 if args.transformations == 'p': 
                     project = "PersonalRotationsFemnist" 
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                    wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
                 else:     
                     project = "FinalRotatedFemnist"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w}"
+                    wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
                 if args.transformations == 'p': 
                     project = "PersonalRotationsFemnist" 
@@ -457,6 +461,7 @@ def initWandB(args):
                 else:  
                     project = "FinalRotatedFemnist" 
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
+
         elif args.dataset_selection == 'L1O':
             if args.model == 'fedsr':
                 if args.transformations == 'p': 
