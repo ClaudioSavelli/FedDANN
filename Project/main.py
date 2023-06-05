@@ -205,9 +205,6 @@ def get_personal_transforms(args):
                 t = transforms.Compose([
                     transforms.ToTensor(),
                     MotionBlur(), 
-                    #transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-                    #add_noise(),
-                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             elif theta == 30:
@@ -219,8 +216,6 @@ def get_personal_transforms(args):
             elif theta == 45:
                 t = transforms.Compose([
                     transforms.ToTensor(),
-                    #transforms.ColorJitter(brightness=3, contrast=1.0, saturation=1.0, hue=0.5),
-                    #transforms.RandomAffine(degrees=0, translate=(0.3,0.3), scale=(0.8,1.2), fill=1),
                     transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
@@ -228,14 +223,12 @@ def get_personal_transforms(args):
                 t = transforms.Compose([
                     transforms.ToTensor(),
                     add_noise(),
-                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             elif theta == 75:
                 t = transforms.Compose([
                     transforms.ToTensor(),
                     transforms.RandomAffine(degrees=0, translate=(0.25,0.25), scale=(0.8,1.2), fill=1),
-                    #transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
                     normalize,
                 ])
             myAngleTransforms.append(copy.deepcopy(t))
