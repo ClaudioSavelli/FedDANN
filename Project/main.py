@@ -369,26 +369,6 @@ def get_datasets(args):
 
     return train_datasets, test_datasets
 
-def take_l1o_loader(args, model, device): 
-    train_transforms, test_transforms = get_transforms(args)
-    data_dir = os.path.join('data', 'RotatedFEMNIST')
-    data = []
-    clients = []
-    files = os.listdir(data_dir)
-    files = [f for f in files if f.endswith('.json')]
-    f = files[args.leftout]
-    print("\nFile leftover: ", f)
-    file_path = os.path.join(data_dir, f)
-    
-    with open(file_path, 'r') as inf:
-        cdata = json.load(inf)
-        for user, images in cdata['user_data'].items():    
-            data.append(Femnist(images, test_transforms, user))
-        
-        for ds in data:
-            clients.append(Client(args, ds, model, test_client=1, device=device))
-    return clients
-
 def set_metrics(args):
     num_classes = get_dataset_num_classes(args.dataset)
     if args.model == 'deeplabv3_mobilenetv2':
