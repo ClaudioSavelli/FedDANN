@@ -1,5 +1,6 @@
 import copy
 import random
+import cv2
 import numpy as np
 import torch 
 import torch.nn as nn 
@@ -47,6 +48,34 @@ def update_metric(metric, outputs, labels):
     prediction = prediction.cpu().numpy()
     metric.update(labels, prediction)
 
+class add_noise(object):
+    def __call__(self, inputs, noise_factor=0.15):
+        """
+        :param img: (Tensor): Image 
+
+        :return: Noisy image (Tensor)
+        """
+        
+        noisy = inputs + torch.randn_like(inputs) * noise_factor
+        noisy = torch.clip(noisy, 0., 1.)
+        return noisy
+
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+    
+class MotionBlur(object):
+    def __init__(self, size = 28):
+        self.size = size
+        self.kernel1 = np.ones((3, 3), np.float32)/10
+        
+    def __call__(self, image):
+        image = cv2.filter2D(src = np.array(image), ddepth = -1, kernel = self.kernel1)
+        image = torch.from_numpy(image)
+        return image
+    
+    def __repr__(self):
+        return self.__class__.__name__+'()'
+
 def get_transforms_rotated(args):
     
     normalize = transforms.Normalize(
@@ -73,12 +102,72 @@ def get_transforms_rotated(args):
 
     return myAngleTransforms, test_transforms
 
+def get_personal_transforms(args):
+    if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
+        normalize = transforms.Normalize(
+        mean=0.1736,
+        std=0.3248,
+        )
+
+        angles = [0, 15, 30, 45, 60, 75]
+        myAngleTransforms = []
+        for theta in angles:
+            if theta == 0:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    normalize,
+                ])
+            elif theta == 15:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    MotionBlur(), 
+                    normalize,
+                ])
+            elif theta == 30:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomInvert(p=1.0),
+                    normalize,
+                ]) 
+            elif theta == 45:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomRotation(degrees=(theta, theta), fill=(1,)),
+                    normalize,
+                ])
+            elif theta == 60:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    add_noise(),
+                    normalize,
+                ])
+            elif theta == 75:
+                t = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.RandomAffine(degrees=0, translate=(0.25,0.25), scale=(0.8,1.2), fill=1),
+                    normalize,
+                ])
+            myAngleTransforms.append(copy.deepcopy(t))
+
+        test_transforms = nptr.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ])
+    else:
+        raise NotImplementedError
+    return myAngleTransforms, test_transforms
+
 def apply_transforms(args, train_datasets, test_datasets):
     l1o_datasets = []
 
     ### FOR ROTATED
     if args.dataset_selection == 'rotated':
-        train_transform_list, test_transforms = get_transforms_rotated(args)
+        if args.transformations == 'r':
+            train_transform_list, test_transforms = get_transforms_rotated(args)
+        elif args.transformations == 'p':
+            train_transform_list, test_transforms = get_personal_transforms(args)
+        else: 
+            raise NotImplementedError
 
         total_clients = 1002
         n_clients_per_angle = total_clients // 6
@@ -91,7 +180,12 @@ def apply_transforms(args, train_datasets, test_datasets):
 
     ### FOR L1O
     elif args.dataset_selection == 'L1O':
-        train_transform_list, test_transforms = get_transforms_rotated(args)
+        if args.transformations == 'r':
+            train_transform_list, test_transforms = get_transforms_rotated(args)
+        elif args.transformations == 'p':
+            train_transform_list, test_transforms = get_personal_transforms(args)
+        else: 
+            raise NotImplementedError
 
         total_clients = 1002
         n_clients_per_angle = total_clients // 6
@@ -118,7 +212,7 @@ def my_read_femnist_dir(data_dir, is_test_mode):
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     random.shuffle(files)
-    if is_test_mode: files = np.random.choice(files, size = len(files)//12)
+    if is_test_mode: files = np.random.choice(files, size = len(files)//6)
 
     i = 1
     for f in files:
@@ -200,11 +294,19 @@ def main():
     p = 0.25
     mode_selected = "disabled" if args.test_mode else "online"
 
-    if args.dataset_selection == 'rotated': 
-        project = "FinalRotatedFemnist"
+    if args.dataset_selection == 'rotated':
+        if args.transformations == "p": 
+            project = "PersonalRotationsFemnist"
+        else:  
+            project = "FinalRotatedFemnist"
+        
         name = f"Emnist_{args.dataset_selection}"
     elif args.dataset_selection == 'L1O': 
-        project = "FinalRotatedFemnist"
+        if args.transformations == "p": 
+            project = "PersonalRotationsFemnist"
+        else: 
+            project = "FinalRotatedFemnist"
+
         name = f"Emnist_{args.dataset_selection}_leftout{args.leftout}"
 
     wandb.init(
