@@ -238,6 +238,13 @@ def get_personal_transforms(args):
 def apply_transforms(args, train_datasets, test_datasets):
     l1o_datasets = []
 
+    if args.nct == "1002": 
+        total_clients = 1002
+    elif args.nct == "all": 
+        total_clients = len(train_datasets)
+    else: 
+        raise NotImplementedError
+
     ### FOR DEFAULT
     if args.dataset_selection == 'default':
         train_transforms, test_transforms = get_transforms(args)
@@ -257,7 +264,6 @@ def apply_transforms(args, train_datasets, test_datasets):
         else: 
             raise NotImplementedError
         
-        total_clients = 1002
         n_clients_per_angle = int(np.ceil(total_clients / 6))
         for i, dataset in enumerate(train_datasets):
             transform_to_do = i // n_clients_per_angle
@@ -276,7 +282,6 @@ def apply_transforms(args, train_datasets, test_datasets):
         else: 
             raise NotImplementedError
 
-        total_clients = 1002
         n_clients_per_angle = int(np.ceil(total_clients / 6))
         new_train_datasets = []
 
@@ -432,14 +437,14 @@ def initWandB(args):
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" 
+                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "Claudio_test"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
                 else:     
-                    project = "FinalRotatedFemnist" 
+                    project = "FinalRotatedFemnist"
                     name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
             elif args.model == 'dann':
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" 
+                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "Claudio_test"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
                 else:     
@@ -448,7 +453,7 @@ def initWandB(args):
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" 
+                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "Claudio_test"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
                 else:  
                     project = "FinalRotatedFemnist" 
@@ -457,7 +462,7 @@ def initWandB(args):
         elif args.dataset_selection == 'L1O':
             if args.model == 'fedsr':
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" 
+                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "Claudio_test"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
                     wandbConfig["leftout"] = args.leftout
                 else:  
@@ -466,7 +471,7 @@ def initWandB(args):
                     wandbConfig["leftout"] = args.leftout
             elif args.model == 'dann':
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" 
+                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "Claudio_test"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["leftout"] = args.leftout
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
@@ -477,7 +482,7 @@ def initWandB(args):
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" 
+                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "Claudio_test"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
                     wandbConfig["leftout"] = args.leftout
                 else: 
