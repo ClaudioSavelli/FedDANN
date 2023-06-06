@@ -39,7 +39,6 @@ def set_seed(random_seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
-
 def get_dataset_num_classes(dataset):
     if dataset == 'idda':
         return 16
@@ -49,7 +48,6 @@ def get_dataset_num_classes(dataset):
 
 def get_dataset_image_dimension(): 
     return 28*28
-
 
 def model_init(args):
     if args.model == 'deeplabv3_mobilenetv2':
@@ -66,7 +64,6 @@ def model_init(args):
     if args.model == 'dann':
         return DANN(get_dataset_image_dimension(), get_dataset_num_classes(args.dataset), 6)
     raise NotImplementedError
-
 
 def get_transforms(args):
     # TODO: test your data augmentation by changing the transforms here!
@@ -100,7 +97,6 @@ def get_transforms(args):
         raise NotImplementedError
     return train_transforms, test_transforms
 
-
 class add_noise(object):
     def __call__(self, inputs, noise_factor=0.15):
         """
@@ -116,7 +112,6 @@ class add_noise(object):
     def __repr__(self):
         return self.__class__.__name__+'()'
     
-
 class add_random_boxes(object):
     def __call__(self, img, n_k = 10, size = 3):
         h,w = size, size
@@ -158,7 +153,6 @@ class EdgeDetect(object):
     def __repr__(self):
         return self.__class__.__name__+'()'
   
- 
 def get_transforms_rotated(args):
     if args.model == 'cnn' or args.model == 'resnet18' or args.model == 'fedsr' or args.model == 'dann':
         normalize = transforms.Normalize(
@@ -380,14 +374,12 @@ def set_metrics(args):
         raise NotImplementedError
     return metrics
 
-
 def gen_clients(args, train_datasets, test_datasets, model, device):
     clients = [[], []]
     for i, datasets in enumerate([train_datasets, test_datasets]):
         for ds in datasets:
             clients[i].append(Client(args, ds, model, test_client=i == 1, device=device))
     return clients[0], clients[1]
-
 
 def initWandB(args):
     wandbConfig = {
@@ -426,7 +418,7 @@ def initWandB(args):
         project = "Real_SmartClientSelection"
         name = f"{'niid' if args.niid else 'iid'}_{args.client_selection}_{args.pow_first_selection}_cr{args.clients_per_round}_d{args.pow_d}_epochs{args.num_epochs}_lr{args.lr}"
         wandbConfig["pow_selection"] = args.pow_first_selection
-        if args.pow_d > 10: project = "Real_SmartClientSelection_big_d"
+        if args.pow_d >= 10: project = "Real_SmartClientSelection_big_d"
     else:
         ## Data selection projects
         if args.dataset_selection == 'default': 
@@ -525,7 +517,7 @@ def main():
     train_datasets, test_datasets = get_datasets(args)
     print('\nDone.')
 
-    print('Applying transformations... ', end='')
+    print('Applying transformations... ', end="")
     train_datasets, test_datasets, l1o_datasets = apply_transforms(args, train_datasets, test_datasets)
     print("Done.")
 
