@@ -258,7 +258,7 @@ def apply_transforms(args, train_datasets, test_datasets):
             raise NotImplementedError
         
         total_clients = 1002
-        n_clients_per_angle = total_clients // 6
+        n_clients_per_angle = int(np.ceil(total_clients / 6))
         for i, dataset in enumerate(train_datasets):
             transform_to_do = i // n_clients_per_angle
             dataset.set_transform(train_transform_list[ transform_to_do if i < total_clients else 0 ])
@@ -277,7 +277,7 @@ def apply_transforms(args, train_datasets, test_datasets):
             raise NotImplementedError
 
         total_clients = 1002
-        n_clients_per_angle = total_clients // 6
+        n_clients_per_angle = int(np.ceil(total_clients / 6))
         new_train_datasets = []
 
         for i, dataset in enumerate(train_datasets):
