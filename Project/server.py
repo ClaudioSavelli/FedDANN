@@ -122,14 +122,17 @@ class Server:
 
             n_samples, model_parameters = c.train(args)
 
-            domain_losses.append(c.get_dmn_loss)
-            cls_losses.append(c.get_cls_loss)
+            domain_losses.append(c.get_dmn_loss())
+            cls_losses.append(c.get_cls_loss())
 
             updates.append( (n_samples, model_parameters) )
 
-        print("Domain loss for the round: ", sum(domain_losses)/len(domain_losses))
+        print("\nDomain loss for the round: ", sum(domain_losses)/len(domain_losses))
         print("Class loss for the round: ", sum(cls_losses)/len(cls_losses))
 
+        
+        wandb.log({"Domain loss": sum(domain_losses)/len(domain_losses), "n_round": n_round})
+        wandb.log({"Classifier loss": sum(cls_losses)/len(cls_losses), "n_round": n_round})
         return updates
 
     def aggregate_old(self, updates):

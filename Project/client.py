@@ -29,7 +29,7 @@ class Client:
         self.device = device
 
         if self.args.model == "dann":
-            self.domain_criterion = nn.CrossEntropyLoss(ignore_index=255)
+            self.domain_criterion = nn.CrossEntropyLoss()
         if self.args.model == "fedsr":
             self.r_mu = nn.Parameter(torch.zeros(args.num_classes, args.z_dim).to(self.device))
             self.r_sigma = nn.Parameter(torch.ones(args.num_classes, args.z_dim).to(self.device))
@@ -96,23 +96,26 @@ class Client:
             ### FORWARD PROCEDURE FOR DANN
             elif self.args.model == "dann":
                 domain_labels = self.dataset.domain * torch.ones(len(labels), dtype=labels.dtype)
-                domain_labels = domain_labels.to(self.device)
+                
+                n_domains=6
+
+                domain_labels_soft = torch.zeros((len(labels), n_domains), dtype=torch.float)
+                for i in range(len(domain_labels_soft)):
+                    domain_labels_soft[i, int(domain_labels[i])] = 1.0
+                domain_labels_soft = domain_labels_soft.to(self.device)
+
                 outputs, domain_output = self.model(images)
 
                 if self.args.dann_decay:
                     gamma = 10  
                     p = self.r / self.args.num_rounds
-                    lambda_p = 2 / (1 + np.exp(-gamma * p)) - 1
+                    lambda_p = (2 / (1 + np.exp(-gamma * p))) - 1
                 else:
                     lambda_p = self.args.dann_w
 
-                n_domains=6
-                domain_output_soft = torch.zeros((len(labels), n_domains), dtype=labels.dtype)
-                for i in range(len(domain_output_soft)):
-                    domain_output_soft[i, domain_output[i]] = 1
 
                 loss_label = self.criterion(outputs, labels)
-                loss_domain = self.criterion(domain_output_soft, domain_labels)
+                loss_domain = self.domain_criterion(domain_output, domain_labels_soft)
 
                 self.cumulative_cls_loss += loss_label.item()
                 self.cumulative_dmn_loss += loss_domain.item()

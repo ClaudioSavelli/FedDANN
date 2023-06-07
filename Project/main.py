@@ -490,6 +490,7 @@ def initWandB(args):
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
                     wandbConfig["leftout"] = args.leftout
     #name = "l2regularizer_L1O_leftout0_cr5_epochs1_lr0.1"
+    project = "Flo_test"
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
         mode=mode_selected,
