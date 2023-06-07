@@ -110,6 +110,9 @@ class Server:
         updates = []
         n = len(clients)
 
+        domain_losses = []
+        cls_losses = []
+
         for i, c in enumerate(clients):
             # loading bar
             sys.stdout.write('\r')
@@ -119,7 +122,13 @@ class Server:
 
             n_samples, model_parameters = c.train(args)
 
+            domain_losses.append(c.get_dmn_loss)
+            cls_losses.append(c.get_cls_loss)
+
             updates.append( (n_samples, model_parameters) )
+
+        print("Domain loss for the round: ", sum(domain_losses)/len(domain_losses))
+        print("Class loss for the round: ", sum(cls_losses)/len(cls_losses))
 
         return updates
 

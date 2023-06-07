@@ -63,6 +63,10 @@ class Client:
         :param cur_epoch: current epoch of training
         :param optimizer: optimizer used for the local training
         """
+
+        self.cumulative_cls_loss = 0
+        self.cumulative_dmn_loss = 0
+
         for cur_step, (images, labels) in enumerate(self.train_loader):
             # Get data to cuda if possible
             images = images.to(self.device)
@@ -102,8 +106,17 @@ class Client:
                 else:
                     lambda_p = self.args.dann_w
 
+                n_domains=6
+                domain_output_soft = torch.zeros((len(labels), n_domains), dtype=labels.dtype)
+                for i in range(len(domain_output_soft)):
+                    domain_output_soft[i, domain_output[i]] = 1
+
                 loss_label = self.criterion(outputs, labels)
-                loss_domain = self.criterion(domain_output, domain_labels)
+                loss_domain = self.criterion(domain_output_soft, domain_labels)
+
+                self.cumulative_cls_loss += loss_label.item()
+                self.cumulative_dmn_loss += loss_domain.item()
+
                 loss = loss_label + lambda_p * loss_domain
 
             else:
@@ -174,3 +187,9 @@ class Client:
 
     def set_r(self, r):
         self.r = r
+
+
+    def get_cls_loss(self):
+        return self.cumulative_cls_loss/len(self.dataset)
+    def get_dmn_loss(self):
+        return self.cumulative_dmn_loss/len(self.dataset)
