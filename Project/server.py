@@ -234,6 +234,7 @@ class Server:
                 for c in self.validation_clients:
                     c.change_model(self.model, dcopy=False)
                 self.eval_train(r)
+                self.eval_domain(r)
 
             if (r+1) % self.args.test_interval == 0:
                 #Test on Test dataset every test_interval number of rounds
@@ -265,6 +266,27 @@ class Server:
                 name = k + '_train'
                 wandb.log({name: v, "n_round": n_round})
         print(self.metrics['eval_train'])
+
+    def eval_domain(self, n_round):
+        self.metrics['domain_acc'].reset()
+
+        n = len(self.validation_clients)
+        for i, c in enumerate(self.validation_clients):
+            # loading bar
+            sys.stdout.write('\r')
+            j = (i + 1) / n
+            sys.stdout.write("Evaluating domain accuracy: [%-20s] %s%%" % ('=' * int(20 * j), f"{(100 * j):.4}"))
+            sys.stdout.flush()
+
+            c.test_domains(self.metrics['domain_acc'])
+
+        # To load results obtained on wandb
+        results = self.metrics['domain_acc'].get_results()
+        for k, v in results.items():
+            if k != 'Class Acc':
+                name = "Domain accuarcy"
+                wandb.log({name: v, "n_round": n_round})
+        print(self.metrics['domain_acc'])
 
     def test(self, n_round):
         """

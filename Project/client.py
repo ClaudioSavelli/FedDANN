@@ -169,6 +169,18 @@ class Client:
                 outputs = self._get_outputs(img)
                 self.update_metric(metric, outputs, labels)
 
+    def test_domains(self, metric):
+        if self.args.model == "dann":
+            with torch.no_grad():
+                for i, (img, labels) in enumerate(self.test_loader):
+                    img = img.to(device=self.device)
+                    labels_domain = self.dataset.domain * torch.ones(len(labels), dtype=labels.dtype)
+
+                    _, outputs_domain = self.model(img)
+                    self.update_metric(metric, outputs_domain, labels_domain)
+        else:
+            raise Exception("No model test if no dann")
+
     def change_model(self, model, dcopy=True):
         #To deepcopy the model for doing the local training phase
         self.model = copy.deepcopy(model) if dcopy else model

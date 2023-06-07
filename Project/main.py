@@ -375,6 +375,8 @@ def set_metrics(args):
             'test': StreamClsMetrics(num_classes, 'test'), 
             'l1O': StreamClsMetrics(num_classes, 'l1O')
         }
+        if args.model == "dann":
+            metrics["domain_acc"] = StreamClsMetrics(6, 'domain_acc')
     else:
         raise NotImplementedError
     return metrics
