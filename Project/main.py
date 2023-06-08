@@ -399,6 +399,7 @@ def initWandB(args):
         "isNiid": args.niid,
         "dataset": args.dataset_selection,
         "model": args.model,
+        "number of clients transformed": args.nct,
         "transformation applierd": args.transformations,
         "num_rounds": args.num_rounds,
         "num_local_epochs": args.num_epochs,
