@@ -96,13 +96,13 @@ class Client:
             ### FORWARD PROCEDURE FOR DANN
             elif self.args.model == "dann":
                 domain_labels = self.dataset.domain * torch.ones(len(labels), dtype=labels.dtype)
-                
-                n_domains=6
+                domain_labels = domain_labels.to(self.device)
+                # n_domains=6
 
-                domain_labels_soft = torch.zeros((len(labels), n_domains), dtype=torch.float)
-                for i in range(len(domain_labels_soft)):
-                    domain_labels_soft[i, int(domain_labels[i])] = 1.0
-                domain_labels_soft = domain_labels_soft.to(self.device)
+                # domain_labels_soft = torch.zeros((len(labels), n_domains), dtype=torch.float)
+                # for i in range(len(domain_labels_soft)):
+                #     domain_labels_soft[i, int(domain_labels[i])] = 1.0
+                # domain_labels_soft = domain_labels_soft.to(self.device)
 
                 outputs, domain_output = self.model(images)
 
@@ -115,11 +115,18 @@ class Client:
 
 
                 loss_label = self.criterion(outputs, labels)
-                loss_domain = self.domain_criterion(domain_output, domain_labels_soft)
+                loss_domain = self.domain_criterion(domain_output, domain_labels)
+                # print(domain_output[0])
+                # print(domain_output.shape)
+
+                # print(domain_labels[0])
+                # print(domain_labels.shape)
+                # input()
 
                 self.cumulative_cls_loss += loss_label.item()
                 self.cumulative_dmn_loss += loss_domain.item()
 
+                # loss = loss_domain
                 loss = loss_label + lambda_p * loss_domain
 
             else:
@@ -177,6 +184,8 @@ class Client:
                     labels_domain = self.dataset.domain * torch.ones(len(labels), dtype=labels.dtype)
 
                     _, outputs_domain = self.model(img)
+
+
                     self.update_metric(metric, outputs_domain, labels_domain)
         else:
             raise Exception("No model test if no dann")

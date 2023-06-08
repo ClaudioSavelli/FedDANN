@@ -169,6 +169,7 @@ class Server:
 #        for key in self.model.state_dict():
 #            if self.model.state_dict()[key].requires_grad:
 #                new_grad[key] = 0*self.model.state_dict()[key]
+
         model_params = [p for p in self.model.parameters()]
         for weight, update in updates:
             update_params = [p for p in update]
@@ -284,7 +285,7 @@ class Server:
         results = self.metrics['domain_acc'].get_results()
         for k, v in results.items():
             if k != 'Class Acc':
-                name = "Domain accuarcy"
+                name =  k + "_domain"
                 wandb.log({name: v, "n_round": n_round})
         print(self.metrics['domain_acc'])
 
