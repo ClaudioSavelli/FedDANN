@@ -492,7 +492,6 @@ def initWandB(args):
                     project = "DGFEMNIST_R" 
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
                     wandbConfig["leftout"] = args.leftout
-    project = "NEWNEWNEW"
     mode_selected = "disabled" if args.test_mode else "online"
     wandb.init(
         mode=mode_selected,
