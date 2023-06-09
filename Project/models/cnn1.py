@@ -55,7 +55,7 @@ class My_CNN(torch.nn.Module):
             for name, param in self.named_parameters():
                 if param.requires_grad:
                     print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
-            input("press enter to continue.")
+            #input("press enter to continue.")
         return out
     
     def forward(self, x):         

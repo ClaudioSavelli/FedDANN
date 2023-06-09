@@ -214,10 +214,10 @@ class Server:
                 c.change_model(self.model) #with deepcopy
                 c.set_r(r)
 
-            if (r % args.change_lr_interval) == 0:
-                print("Changing the learning rate from ", args.lr)
-                args.lr = 0.1 - 0.09 * r/args.num_rounds 
-                print("to ", args.lr)
+            if r == 350: 
+                args.lr = 0.01
+            if r == 700: 
+                args.lr = 0.001
 
             updates = self.train_round(clients, r, args)
 
