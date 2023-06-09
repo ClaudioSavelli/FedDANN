@@ -240,7 +240,7 @@ class Server:
                 for c in self.validation_clients:
                     c.change_model(self.model, dcopy=False)
                 self.eval_train(r)
-                self.eval_domain(r)
+                if args.model == 'dann': self.eval_domain(r)
 
             if (r+1) % self.args.test_interval == 0:
                 #Test on Test dataset every test_interval number of rounds
