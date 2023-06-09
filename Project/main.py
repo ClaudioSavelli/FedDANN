@@ -440,56 +440,56 @@ def initWandB(args):
         elif args.dataset_selection == 'rotated': 
             if args.model == 'fedsr': 
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "DGFEMNIST_P"
+                    project = "DGFEMNIST_P_1002" if args.nct == '1002' else "DGFEMNIST_P_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
                 else:     
-                    project = "DGFEMNIST_R"
+                    project = "DGFEMNIST_R_1002" if args.nct == '1002' else "DGFEMNIST_R_ALL"
                     name = f"{args.dataset_selection}_{args.model}_l1r{args.l2r}_cmi{args.cmi}"
             elif args.model == 'dann':
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "DGFEMNIST_P"
+                    project = "DGFEMNIST_P_1002" if args.nct == '1002' else "DGFEMNIST_P_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
                 else:     
-                    project = "DGFEMNIST_R"
+                    project = "DGFEMNIST_R_1002" if args.nct == '1002' else "DGFEMNIST_R_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "DGFEMNIST_P"
+                    project = "DGFEMNIST_P_1002" if args.nct == '1002' else "DGFEMNIST_P_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
                 else:  
-                    project = "DGFEMNIST_R" 
+                    project = "DGFEMNIST_R_1002" if args.nct == '1002' else "DGFEMNIST_R_ALL" 
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}"
 
         elif args.dataset_selection == 'L1O':
             if args.model == 'fedsr':
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "DGFEMNIST_P"
+                    project = "DGFEMNIST_P_1002" if args.nct == '1002' else "DGFEMNIST_P_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
                     wandbConfig["leftout"] = args.leftout
                 else:  
-                    project = "DGFEMNIST_R"
+                    project = "DGFEMNIST_R_1002" if args.nct == '1002' else "DGFEMNIST_R_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_l1r{args.l2r}_cmi{args.cmi}"
                     wandbConfig["leftout"] = args.leftout
             elif args.model == 'dann':
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "DGFEMNIST_P"
+                    project = "DGFEMNIST_P_1002" if args.nct == '1002' else "DGFEMNIST_P_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["leftout"] = args.leftout
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
                 else:  
-                    project = "DGFEMNIST_R"
+                    project = "DGFEMNIST_R_1002" if args.nct == '1002' else "DGFEMNIST_R_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}_w{args.dann_w if not args.dann_decay else 'decay'}"
                     wandbConfig["leftout"] = args.leftout
                     wandbConfig["dann_w"] = args.dann_w if not args.dann_decay else "decay"
             else:
                 if args.transformations == 'p': 
-                    project = "PersonalRotationsFemnist" if args.nct == '1002' else "DGFEMNIST_P"
+                    project = "DGFEMNIST_P_1002" if args.nct == '1002' else "DGFEMNIST_P_ALL"
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
                     wandbConfig["leftout"] = args.leftout
                 else: 
-                    project = "DGFEMNIST_R" 
+                    project = "DGFEMNIST_R_1002" if args.nct == '1002' else "DGFEMNIST_R_ALL" 
                     name = f"{args.dataset_selection}_{args.transformations}_{args.model}_leftout{args.leftout}"
                     wandbConfig["leftout"] = args.leftout
     mode_selected = "disabled" if args.test_mode else "online"
