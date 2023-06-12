@@ -150,7 +150,7 @@ def main():
     
 
         # set the wandb project where this run will be logged
-        project="RealEmnistBenchmark",
+        project="EMNIST-CENTRALISED",
         name = name,
         
         # track hyperparameters and run metadata
