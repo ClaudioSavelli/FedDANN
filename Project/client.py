@@ -68,7 +68,6 @@ class Client:
         self.cumulative_dmn_loss = 0
 
         for cur_step, (images, labels) in enumerate(self.train_loader):
-            # Get data to cuda if possible
             images = images.to(self.device)
             labels = labels.to(self.device)
         
@@ -79,7 +78,7 @@ class Client:
 
                 loss = self.criterion(outputs, labels)
 
-                if self.args.l2r != 0.0:  # 0.01 works quite well (as starting point)
+                if self.args.l2r != 0.0: 
                     regL2R = z.norm(dim=1).mean()
                     loss = loss + self.args.l2r * regL2R
                 if self.args.cmi != 0.0:
@@ -116,12 +115,6 @@ class Client:
 
                 loss_label = self.criterion(outputs, labels)
                 loss_domain = self.domain_criterion(domain_output, domain_labels)
-                # print(domain_output[0])
-                # print(domain_output.shape)
-
-                # print(domain_labels[0])
-                # print(domain_labels.shape)
-                # input()
 
                 self.cumulative_cls_loss += loss_label.item()
                 self.cumulative_dmn_loss += loss_domain.item()

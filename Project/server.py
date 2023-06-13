@@ -21,9 +21,8 @@ class Server:
         self.test_clients = test_clients
         self.left_one_out_clients = None
         self.model = model
-        self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = self.args.sm)#, weight_decay=args.wd)
+        self.optim = torch.optim.SGD(params=model.parameters(), lr=1, momentum = self.args.sm)
         self.metrics = metrics
-        #self.model_params_dict = copy.deepcopy(self.model.state_dict())
 
     def count_labels(self, clients): 
         res = list()
@@ -135,40 +134,10 @@ class Server:
         wandb.log({"Classifier loss": sum(cls_losses)/len(cls_losses), "n_round": n_round})
         return updates
 
-    def aggregate_old(self, updates):
-        """
-        This method handles the FedAvg aggregation
-        :param updates: updates received from the clients
-        :return: aggregated parameters
-        """
-
-        ### INITIALIZE NEW (ZERO) STATE DICTIONARY
-        model_sd = self.model.state_dict()
-        new_sd = {}
-        total_count = 0
-        for key in model_sd:
-            new_sd[key] = 0*model_sd[key]
-
-        ### AVERAGE THE OTHER STATE DICTIONARIES
-        for num, state_dict in updates:
-            total_count += num
-            for key in model_sd:
-                new_sd[key] += num * state_dict[key]
-
-        for key in new_sd:
-            new_sd[key] = new_sd[key]/total_count
-
-        return new_sd
-
     def aggregate(self, updates):
 
-        # updates = [(abs_weight, update), ...]
         n = sum([u[0] for u in updates])
         new_grad = [torch.zeros_like(p) for p in self.model.parameters()]
-#        new_grad = {}
-#        for key in self.model.state_dict():
-#            if self.model.state_dict()[key].requires_grad:
-#                new_grad[key] = 0*self.model.state_dict()[key]
 
         model_params = [p for p in self.model.parameters()]
         for weight, update in updates:
@@ -224,9 +193,6 @@ class Server:
             new_grad = self.aggregate(updates)
             self.step(new_grad)
             sys.stdout.write("\n")
-
-            #new_parameters = self.aggregate_old()
-            #self.model.load_state_dict(new_parameters) ### UPDATE THE GLOBAL MODEL
 
             if (r+1) % self.args.gc == 0:
                 print("Doing Gargage Collector in GPU")

@@ -66,7 +66,6 @@ def model_init(args):
     raise NotImplementedError
 
 def get_transforms(args):
-    # TODO: test your data augmentation by changing the transforms here!
     if args.model == 'deeplabv3_mobilenetv2':
         train_transforms = sstr.Compose([
             sstr.RandomResizedCrop((512, 928), scale=(0.5, 2.0)),
@@ -112,20 +111,6 @@ class add_noise(object):
     def __repr__(self):
         return self.__class__.__name__+'()'
     
-class add_random_boxes(object):
-    def __call__(self, img, n_k = 10, size = 3):
-        h,w = size, size
-        img = np.asarray(img)
-        img_size = 28
-        for k in range(n_k):
-            y,x = np.random.randint(0,img_size-w,(2,))
-            img[y:y+h,x:x+w] = 0
-        img = torch.from_numpy(img)
-        return img
-
-    def __repr__(self):
-        return self.__class__.__name__+'()'
-    
 class MotionBlur(object):
     def __init__(self, size = 28):
         self.size = size
@@ -133,20 +118,6 @@ class MotionBlur(object):
         
     def __call__(self, image):
         image = cv2.filter2D(src = np.array(image), ddepth = -1, kernel = self.kernel1)
-        image = torch.from_numpy(image)
-        return image
-    
-    def __repr__(self):
-        return self.__class__.__name__+'()'
-    
-class EdgeDetect(object):
-    def __init__(self, size = 28):
-        self.t_lower = 50  # Lower Threshold
-        self.t_upper = 150  # Upper threshold
-        
-    def __call__(self, image):
-        image = cv2.Canny(np.array(image), self.t_lower, self.t_upper)
-        print(type(image))
         image = torch.from_numpy(image)
         return image
     
@@ -538,26 +509,6 @@ def main():
 
     print("Generating server... ", end="")
     server = Server(args, train_clients, test_clients, model, metrics)
-
-    '''
-    for i in range(6):
-        if i == args.leftout: continue
-        for multipl in range(10): 
-            client = None
-            while client == None:
-                client = np.random.choice(train_clients)
-                if client.dataset.domain != i:
-                    client = None
-
-            i_ = np.random.randint(len(client.dataset))
-            img, label = client.dataset[i_]
-            img = np.array(img).reshape(28,28)
-            print("domain", i, "label", label)
-            plt.imshow(img, cmap="gray")
-            plt.show()
-
-    input()
-    '''
 
     if args.dataset_selection == 'L1O': 
         _ , l1o_clients = gen_clients(args, [], l1o_datasets, model, device)

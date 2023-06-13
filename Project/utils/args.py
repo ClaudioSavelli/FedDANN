@@ -1,6 +1,4 @@
 import argparse
-import torch
-
 
 def get_parser():
     parser = argparse.ArgumentParser()

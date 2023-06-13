@@ -16,7 +16,6 @@ class My_CNN(torch.nn.Module):
         # outputting 32 convolutional features, with a square kernel size of 5
         self.layer1 = torch.nn.Sequential(
             torch.nn.Conv2d(1, 32, kernel_size=5),
-            #torch.nn.BatchNorm2d(32),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(kernel_size=2)) #32*12*12
         
@@ -24,7 +23,6 @@ class My_CNN(torch.nn.Module):
         # outputting 32 convolutional features, with a square kernel size of 5
         self.layer2 = torch.nn.Sequential(
             torch.nn.Conv2d(32, 64, kernel_size=5),
-            #torch.nn.BatchNorm2d(64),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(kernel_size=2)) #64*4*4
 
@@ -51,11 +49,6 @@ class My_CNN(torch.nn.Module):
     
     def cls(self, x):
         out = self.fc2(x)
-        if out.isnan().any():
-            for name, param in self.named_parameters():
-                if param.requires_grad:
-                    print ("name: ", name, "\ndatashape: ", param.data.shape, "\nisNaN: ", param.data.isnan().any(), "\n\n")
-            #input("press enter to continue.")
         return out
     
     def forward(self, x):         

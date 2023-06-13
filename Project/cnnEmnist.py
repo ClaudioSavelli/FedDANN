@@ -100,28 +100,6 @@ def get_test_loader(data_dir,
 
     return data_loader
 
-'''
-def evaluate_mean_std():
-    train_dataset = datasets.EMNIST(
-        root='./data', train=True,split = 'byclass',
-        download=True
-    )
-
-    mean = 0 
-    std = 0
-    for X, _ in train_dataset: 
-        convert_tensor = transforms.ToTensor()
-
-        X = convert_tensor(X)
-        mean += X.mean()
-        std += X.std()
-    mean = mean/len(train_dataset)
-    std = std/len(train_dataset)
-    print("mean: ",mean," std: ",std)
-
-    return mean, std
-'''
-
 def check_accuracy(loader, model, metric):
 
     metric.reset()
