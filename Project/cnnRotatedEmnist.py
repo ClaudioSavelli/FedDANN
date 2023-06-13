@@ -160,6 +160,13 @@ def get_personal_transforms(args):
 def apply_transforms(args, train_datasets, test_datasets):
     l1o_datasets = []
 
+    if args.nct == "1002": 
+        total_clients = 1002
+    elif args.nct == "all": 
+        total_clients = len(train_datasets)
+    else: 
+        raise NotImplementedError
+
     ### FOR ROTATED
     if args.dataset_selection == 'rotated':
         if args.transformations == 'r':
@@ -169,8 +176,7 @@ def apply_transforms(args, train_datasets, test_datasets):
         else: 
             raise NotImplementedError
 
-        total_clients = 1002
-        n_clients_per_angle = total_clients // 6
+        n_clients_per_angle = int(np.ceil(total_clients / 6))
         for i, dataset in enumerate(train_datasets):
             transform_to_do = i // n_clients_per_angle
             dataset.set_transform(train_transform_list[ transform_to_do if i < total_clients else 0 ])
@@ -187,8 +193,7 @@ def apply_transforms(args, train_datasets, test_datasets):
         else: 
             raise NotImplementedError
 
-        total_clients = 1002
-        n_clients_per_angle = total_clients // 6
+        n_clients_per_angle = int(np.ceil(total_clients / 6))
         new_train_datasets = []
 
         for i, dataset in enumerate(train_datasets):
@@ -214,8 +219,7 @@ def my_read_femnist_dir(data_dir, is_test_mode):
     random.shuffle(files)
     if is_test_mode: files = np.random.choice(files, size = len(files)//6)
 
-    i = 1
-    for f in files:
+    for i, f in enumerate(files):
         #Loading bar
         sys.stdout.write('\r')
         sys.stdout.write("%d / %d" % (i, len(files)))
@@ -226,7 +230,6 @@ def my_read_femnist_dir(data_dir, is_test_mode):
             cdata = json.load(inf)
             for user, images in cdata['user_data'].items():    
                 data.append(Femnist(images, None, user))
-        i += 1
     
     return data
 
@@ -295,12 +298,8 @@ def main():
     mode_selected = "disabled" if args.test_mode else "online"
 
     if args.dataset_selection == 'rotated':
-        if args.transformations == "p": 
-            project = "PersonalRotationsFemnist"
-        else:  
-            project = "FinalRotatedFemnist"
-        
-        name = f"Emnist_{args.dataset_selection}"
+        project = "EMNIST TRANSFORMATIONS BENCHMARK"
+        name = f"Emnist_{args.dataset_selection}_{args.transformations}_{args.nct}"
     elif args.dataset_selection == 'L1O': 
         if args.transformations == "p": 
             project = "PersonalRotationsFemnist"

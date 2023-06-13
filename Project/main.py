@@ -273,7 +273,7 @@ def apply_transforms(args, train_datasets, test_datasets):
 
     return train_datasets, test_datasets, l1o_datasets
 
-def my_read_femnist_dir(data_dir, transform, is_test_mode):
+def my_read_femnist_dir(data_dir, is_test_mode):
     data = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
@@ -291,41 +291,22 @@ def my_read_femnist_dir(data_dir, transform, is_test_mode):
             cdata = json.load(inf)
             for user, images in cdata['user_data'].items():    
                 data.append(Femnist(images, None, user))
-        i += 1
     
     return data
 
-def my_read_femnist_data(train_data_dir, test_data_dir, train_transform, test_transform, is_test_mode):
-    return my_read_femnist_dir(train_data_dir, train_transform, is_test_mode), \
-           my_read_femnist_dir(test_data_dir, test_transform, is_test_mode)
+def my_read_femnist_data(train_data_dir, test_data_dir, is_test_mode):
+    return my_read_femnist_dir(train_data_dir, is_test_mode), \
+           my_read_femnist_dir(test_data_dir, is_test_mode)
 
 def get_datasets(args):
 
     train_datasets = []
-    train_transforms, test_transforms = get_transforms(args)
 
-    if args.dataset == 'idda':
-        root = 'data/idda'
-        with open(os.path.join(root, 'train.json'), 'r') as f:
-            all_data = json.load(f)
-        for client_id in all_data.keys():
-            train_datasets.append(IDDADataset(root=root, list_samples=all_data[client_id], transform=train_transforms,
-                                              client_name=client_id))
-        with open(os.path.join(root, 'test_same_dom.txt'), 'r') as f:
-            test_same_dom_data = f.read().splitlines()
-            test_same_dom_dataset = IDDADataset(root=root, list_samples=test_same_dom_data, transform=test_transforms,
-                                                client_name='test_same_dom')
-        with open(os.path.join(root, 'test_diff_dom.txt'), 'r') as f:
-            test_diff_dom_data = f.read().splitlines()
-            test_diff_dom_dataset = IDDADataset(root=root, list_samples=test_diff_dom_data, transform=test_transforms,
-                                                client_name='test_diff_dom')
-        test_datasets = [test_same_dom_dataset, test_diff_dom_dataset]
-
-    elif args.dataset == 'femnist':
+    if args.dataset == 'femnist':
         niid = args.niid
         train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
         test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
-        train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, train_transforms, test_transforms, args.test_mode)
+        train_datasets, test_datasets = my_read_femnist_data(train_data_dir, test_data_dir, args.test_mode)
 
     else:
         raise NotImplementedError
