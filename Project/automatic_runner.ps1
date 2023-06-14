@@ -18,13 +18,19 @@
 
 #quelli da fare dopo appena sappiamo come fare con l1o
 
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection rotated --num_epochs 20 --lr 0.01 --bs 128
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 0 --num_epochs 20 --lr 0.01 --bs 128
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 1 --num_epochs 20 --lr 0.01 --bs 128
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 2 --num_epochs 20 --lr 0.01 --bs 128
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 3 --num_epochs 20 --lr 0.01 --bs 128
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 4 --num_epochs 20 --lr 0.01 --bs 128
-#C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 5 --num_epochs 20 --lr 0.01 --bs 128
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 0 --num_epochs 20 --lr 0.01 --bs 128 --nct 1002 --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 1 --num_epochs 20 --lr 0.01 --bs 128 --nct 1002 --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 2 --num_epochs 20 --lr 0.01 --bs 128 --nct 1002 --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 3 --num_epochs 20 --lr 0.01 --bs 128 --nct 1002 --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 4 --num_epochs 20 --lr 0.01 --bs 128 --nct 1002 --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 5 --num_epochs 20 --lr 0.01 --bs 128 --nct 1002 --transformations p
+
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 0 --num_epochs 20 --lr 0.01 --bs 128 --nct all --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 1 --num_epochs 20 --lr 0.01 --bs 128 --nct all --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 2 --num_epochs 20 --lr 0.01 --bs 128 --nct all --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 3 --num_epochs 20 --lr 0.01 --bs 128 --nct all --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 4 --num_epochs 20 --lr 0.01 --bs 128 --nct all --transformations p
+C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/cnnRotatedEmnist.py --dataset_selection L1O --leftout 5 --num_epochs 20 --lr 0.01 --bs 128 --nct all --transformations p
 
 #C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection rotated
 #C:/ProgramData/miniconda3/python.exe d:/GitHub/Machine-Learning-and-Deep-Learning-Project/Project/main.py --dataset_selection L1O --leftout 0

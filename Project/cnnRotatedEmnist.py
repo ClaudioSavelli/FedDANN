@@ -301,12 +301,8 @@ def main():
         project = "EMNIST TRANSFORMATIONS BENCHMARK"
         name = f"Emnist_{args.dataset_selection}_{args.transformations}_{args.nct}"
     elif args.dataset_selection == 'L1O': 
-        if args.transformations == "p": 
-            project = "PersonalRotationsFemnist"
-        else: 
-            project = "FinalRotatedFemnist"
-
-        name = f"Emnist_{args.dataset_selection}_leftout{args.leftout}"
+        project = "EMNIST TRANSFORMATIONS BENCHMARK"
+        name = f"{args.dataset_selection}_{args.transformations}_{args.nct}_leftout{args.leftout}"
 
     wandb.init(
         mode=mode_selected,
