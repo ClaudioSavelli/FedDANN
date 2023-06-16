@@ -13,6 +13,9 @@ The base FedAvg algorithm is proposed and analysed in the initial part of the pa
 
 Finally, we propose the first, to the best of our knowledge, adaptation of the well-known adversarial learning technique DANN to the Federated scenario as a possible domain generalisation solution.
 
+
+--------------------------------------------------------------------------------
+
 References: 
 
 [1] Google AI Blog, Federated Learning: Collaborative
