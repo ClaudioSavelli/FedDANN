@@ -15,14 +15,14 @@ class My_CNN(torch.nn.Module):
         # First 2D convolutional layer, taking in 1 input channel (image),
         # outputting 32 convolutional features, with a square kernel size of 5
         self.layer1 = torch.nn.Sequential(
-            torch.nn.Conv2d(1, 32, kernel_size=5),
+            torch.nn.Conv2d(1, 32, kernel_size=5), #32*24*24
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(kernel_size=2)) #32*12*12
         
         # Second 2D convolutional layer, taking in 1 input channel (image),
         # outputting 32 convolutional features, with a square kernel size of 5
         self.layer2 = torch.nn.Sequential(
-            torch.nn.Conv2d(32, 64, kernel_size=5),
+            torch.nn.Conv2d(32, 64, kernel_size=5), #64*8*8
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(kernel_size=2)) #64*4*4
 

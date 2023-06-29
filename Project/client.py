@@ -24,8 +24,6 @@ class Client:
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=255)
 
-        self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
-
         self.device = device
 
         if self.args.model == "dann":
